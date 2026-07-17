@@ -9,7 +9,7 @@ mode = 3   # Mode of the planeterrella :
 collisions = true   #enable collisions
 
 [Simulation]
-Nparticules = 50
+Nparticles = 50
 Nsteps = 10000
 voltage = 1000 # Voltage in Volts
 

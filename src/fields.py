@@ -25,11 +25,12 @@ class MagneticField(Fields):
         B = np.zeros_like(position)
 
         for dipole in self.dipoles:
-            r = position-dipole.position
-            r_norm = np.linalg.norm(r, axis=1)
-            m = dipole.moment * dipole.direction
+            r = position-dipole.position    #(N,3)
+            r_norm = np.linalg.norm(r, axis=1)  #(N,)
+            m = dipole.moment * dipole.direction    #(3,)
+            m_dot_r = r @ m  #(N,)
             mu_0 = 1.25663706212e-6  # T*m/A
-            B += mu_0/(4*np.pi) * (3*r*(np.dot(m,r))/r_norm**5 - m/r_norm**3)
+            B += mu_0/(4*np.pi) * (3*r*(m_dot_r[:, None])/r_norm[:, None]**5 - m/r_norm[:, None]**3)
         return B
 
 class ElectricField(Fields):

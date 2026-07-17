@@ -1,5 +1,5 @@
 import numpy as np
-from particles import Particles
+from src.particles import Particles
 class TrajectoryRecorder:
     def __init__(self, trackedParticles: Particles):
         self.trajectories = []  # List to store trajectories of electrons

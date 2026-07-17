@@ -1,8 +1,8 @@
 
 
 #depreciated 
-from particles import Electrons
-from fields import MagneticField
+from src.particles import Electrons
+from src.fields import MagneticField
 import numpy as np 
 def RungeKutta4(electrons: Electrons, magnetic_field: MagneticField):
 

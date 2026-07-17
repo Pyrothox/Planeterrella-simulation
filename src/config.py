@@ -15,8 +15,8 @@ def load_experiment(file_path):
     # Read gas parameters
     gas_params = d["Gas"]
     species = gas_params["species"]
-    names = np.array([specie["name"] for specie in species])
-    fractions = np.array([specie["fraction"] for specie in species])
+    names = [specie["name"] for specie in species]
+    fractions = [specie["fraction"] for specie in species]
     assert np.isclose(np.sum(fractions), 1.0), "Fractions must sum to 1."
 
     gas = Gas(
