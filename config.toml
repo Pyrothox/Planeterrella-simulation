@@ -1,0 +1,45 @@
+# Planterrella configuration for the simulation
+
+mode = 3   # Mode of the planeterrella : 
+# 0 = The needle and the small sphere
+# 1 = The needle and two spheres
+# 2 = Two spheres, the smaller one ejecting the particles
+# 3 = Two spheres, the larger one ejecting the particles
+
+collisions = true   #enable collisions
+
+[Simulation]
+Nparticules = 50
+Nsteps = 10000
+voltage = 1000 # Voltage in Volts
+
+[Gas]
+pressure = 2.5 # Pressure in Pa
+temperature = 300 # Temperature in K
+[[Gas.species]]
+name = "N2"
+fraction = 0.8
+[[Gas.species]]
+name = "O2"
+fraction = 0.2
+
+[SmallSphere]
+R = 0.05    # Radius of the small sphere in meters
+position = [0, 0.12, 0.2]   # Position of the small sphere in meters (x, y, z)
+direction = [0, 0, 1]   # Direction of the small sphere in meters (x, y, z)
+
+[LargeSphere]
+R = 0.1     # Radius of the large sphere in meters
+position = [0, -0.1, 0.2]   # Position of the large sphere in meters (x, y, z)
+direction = [0, 0.34202014332, 0.93969262078]   # Direction of the large sphere in meters (x, y, z)
+
+[Needle]
+position = [0, 0, 0]   # Position of the needle in meters (x, y, z)
+lc = 0.2    # Length of the cylinder part in meters
+lb = 0.2   # Length of the conical part in meters
+r = 0.005   # Radius of the needle in meters (the cylinder part)
+direction = [0, 0, 1]   # Direction of the needle in meters (x, y, z)
+
+[Dome]
+D = 0.5     # Diameter of the dome in meters
+height = 1.0   # Height of the dome in meters

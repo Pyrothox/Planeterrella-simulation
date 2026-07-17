@@ -1,0 +1,83 @@
+# Reads a TOML configuration and builds the objects needed for the simulation.
+import tomllib
+import numpy as np
+from src.gas import Gas
+from src.geometry import Geometry, Sphere, Needle, Dome
+from src.experiment import Experiment
+
+
+def load_experiment(file_path):
+    with open(file_path, "rb") as f:
+        d = tomllib.load(f)
+    
+    # Read gas parameters
+    gas_params = d["Gas"]
+    species = gas_params["species"]
+    names = np.array([specie["name"] for specie in species])
+    fractions = np.array([specie["fraction"] for specie in species])
+    assert np.isclose(np.sum(fractions), 1.0), "Fractions must sum to 1."
+
+    gas = Gas(
+        pressure=gas_params["pressure"],
+        temperature=gas_params["temperature"],
+        names=names,
+        fractions=fractions
+    )
+
+    # Read geometry parameters
+    
+    mode = d["mode"]
+    # 0 = The buse and one sphere : buse shooting electrons
+    # 1 = The buse and two spheres
+    # 2 = Two spheres, the smaller one ejecting the particles
+    # 3 = Two spheres, the larger one ejecting the particles
+
+    dome = Dome(
+        radius=d["Dome"]["D"] / 2,
+        height=d["Dome"]["height"]
+    )
+
+    if mode == 0:       # needle shoots e- (cathode) and small sphere receives (anode)
+        cathode = Needle(
+            position=np.array(d["Needle"]["position"]),
+            lc=d["Needle"]["lc"],
+            lb=d["Needle"]["lb"],
+            r=d["Needle"]["r"],
+            direction_vector=np.array(d["Needle"]["direction"])
+        )
+        anode = Sphere(
+            radius=d["SmallSphere"]["R"],
+            position=np.array(d["SmallSphere"]["position"]),
+            direction_vector=np.array(d["SmallSphere"]["direction"])
+        )
+    elif mode == 1:     # needs 3 objects  : not handled yet
+        print("please don't")
+    elif mode == 2:     # small sphere shoots e- (cathode) and large sphere receives (anode)
+        cathode = Sphere(
+            radius=d["SmallSphere"]["R"],
+            position=np.array(d["SmallSphere"]["position"]),
+            direction_vector=np.array(d["SmallSphere"]["direction"])
+        )
+        anode = Sphere(
+            radius=d["LargeSphere"]["R"],
+            position=np.array(d["LargeSphere"]["position"]),
+            direction_vector=np.array(d["LargeSphere"]["direction"])
+        )
+    elif mode == 3:     # large sphere shoots e- (cathode) and small sphere receives (anode) : auroral observations 
+        cathode = Sphere(
+            radius=d["LargeSphere"]["R"],
+            position=np.array(d["LargeSphere"]["position"]),
+            direction_vector=np.array(d["LargeSphere"]["direction"])
+        )
+        anode = Sphere(
+            radius=d["SmallSphere"]["R"],
+            position=np.array(d["SmallSphere"]["position"]),
+            direction_vector=np.array(d["SmallSphere"]["direction"])
+        )
+
+    simulation_settings = d["Simulation"]
+
+    geometry = Geometry(cathode = cathode, anode=anode, dome=dome)
+    experiment = Experiment(gas=gas, geometry=geometry, simulationSettings=simulation_settings)
+
+    return experiment
