@@ -44,4 +44,5 @@ class Simulation:
         for step in range(self.Nsteps):
 
             BorisPusher(electrons, self.experiment.MagneticField)       #updating the positions and velocities of electrons using the Boris algorithm
-            
+            if self.experiment.collisions:
+                pass   #handling collisions if enabled
