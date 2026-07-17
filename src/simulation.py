@@ -11,19 +11,18 @@ class Simulation:
         self.Nsteps = simSettings["Nsteps"]
 
     def run(self):
-        # Placeholder for simulation logic
         print("Running simulation with the following settings:")
         print(f"Geometry: {self.experiment.geometry}")
         print(f"Gas: {self.experiment.gas}")
         print(f"Simulation Settings: {self.experiment.simSettings}")
 
         N = self.Nparticles
+
+        # Generating initial velocities of electrons
         initial_positions = np.zeros((N, 3))
         initial_velocities = np.zeros((N, 3))
-
         V = self.experiment.simSettings["V"]
         cathode = self.experiment.geometry.cathode
-
         if isinstance(cathode, Needle):
             generator = MonteCarloNeedle
         elif isinstance(cathode, Sphere):
@@ -35,3 +34,7 @@ class Simulation:
             initial_settings = generator(cathode, V)
             initial_positions[i] = initial_settings[0]
             initial_velocities[i] = initial_settings[1]
+
+        electrons = Electrons(initial_positions, initial_velocities, cathode)   
+        
+        

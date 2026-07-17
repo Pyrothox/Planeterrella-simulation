@@ -29,7 +29,7 @@ class Dipole:
         self.direction = shere.direction_vector
         self.moment = 50
 
-class Geometry:
+class Planeterrella:
     def __init__(self, cathode: Sphere | Needle, anode: Sphere | Needle, dome: Dome):
         self.anode = anode
         self.cathode = cathode

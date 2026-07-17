@@ -3,7 +3,7 @@ import src.geometry
 
 
 class Experiment:
-    def __init__(self, geometry: src.geometry.Geometry, gas: src.gas.Gas, simulationSettings : dict):
-        self.geometry = geometry
+    def __init__(self, planeterrella: src.geometry.Planeterrella, gas: src.gas.Gas, simulationSettings : dict):
+        self.planeterrella = planeterrella
         self.gas = gas
         self.simSettings = simulationSettings

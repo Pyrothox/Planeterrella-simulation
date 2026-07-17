@@ -2,7 +2,7 @@
 import tomllib
 import numpy as np
 from src.gas import Gas
-from src.geometry import Geometry, Sphere, Needle, Dome
+from src.geometry import Planeterrella, Sphere, Needle, Dome
 from src.experiment import Experiment
 
 
@@ -77,7 +77,7 @@ def load_experiment(file_path):
 
     simulation_settings = d["Simulation"]
 
-    geometry = Geometry(cathode = cathode, anode=anode, dome=dome)
-    experiment = Experiment(gas=gas, geometry=geometry, simulationSettings=simulation_settings)
+    planeterrella = Planeterrella(cathode = cathode, anode=anode, dome=dome)
+    experiment = Experiment(planeterrella=planeterrella, gas=gas, simulationSettings=simulation_settings)
 
     return experiment
