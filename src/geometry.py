@@ -43,3 +43,44 @@ class Planeterrella:
         if isinstance(cathode, Sphere):
             dipoles.append(Dipole(cathode))
         return dipoles
+    
+
+    def OutofBounds(self, positions: np.ndarray) -> np.ndarray:
+        """
+        Check if a particle at the given position is out of bounds of the Planeterrella.
+        """
+        counter = 0
+        alive = np.ones(positions.shape[0], dtype=bool)
+        for i, pos in enumerate(positions):
+            if pos[2] < 0 or pos[1]**2 + pos[0]**2 > self.dome.radius**2:
+                alive[i] = False
+                counter += 1
+        print(f"Number of particles out of bounds: {counter}")
+        return alive
+            
+
+    def check_collision(self, position: np.ndarray) -> bool:
+        """
+        Check if a particle at the given position collides with any of the objects in the Planeterrella.
+        """
+        # Check collision with cathode
+        if isinstance(self.cathode, Sphere):
+            if np.linalg.norm(position - self.cathode.position) <= self.cathode.radius:
+                return True
+        elif isinstance(self.cathode, Needle):
+            # Implement needle collision logic if needed
+            pass
+
+        # Check collision with anode
+        if isinstance(self.anode, Sphere):
+            if np.linalg.norm(position - self.anode.position) <= self.anode.radius:
+                return True
+        elif isinstance(self.anode, Needle):
+            # Implement needle collision logic if needed
+            pass
+
+        # Check collision with dome
+        if np.linalg.norm(position) >= self.dome.radius:
+            return True
+
+        return False
