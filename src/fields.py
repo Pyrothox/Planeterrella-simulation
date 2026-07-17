@@ -1,7 +1,7 @@
 # Electric and Magnetic fields for the Planeterrella simulation
 import numpy as np
 from abc import ABC, abstractmethod
-from src.geometry import Geometry, Dipole
+from src.geometry import Planeterrella, Dipole
 
 class Fields(ABC):
     @abstractmethod
@@ -9,8 +9,8 @@ class Fields(ABC):
         pass
 
 class MagneticField(Fields):
-    def __init__(self, geometry: Geometry):
-        self.dipoles: list[Dipole] = geometry.dipoles
+    def __init__(self, planeterrella: Planeterrella):
+        self.dipoles: list[Dipole] = planeterrella.dipoles
 
     def at(self, position: np.ndarray) -> np.ndarray:
         """
@@ -33,9 +33,9 @@ class MagneticField(Fields):
         return B
 
 class ElectricField(Fields):
-    def __init__(self, geometry: Geometry, voltage: float):
-        self.cathode = geometry.cathode
-        self.anode = geometry.anode
+    def __init__(self, planeterrella: Planeterrella, voltage: float):
+        self.cathode = planeterrella.cathode
+        self.anode = planeterrella.anode
         self.voltage = voltage
 
     def at(self, position: np.ndarray) -> np.ndarray:

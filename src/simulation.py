@@ -1,8 +1,9 @@
+import numpy as np 
 from src.experiment import Experiment
 from src.particles import Electrons
 from src.geometry import Needle, Sphere
 from src.monteCarlo import MonteCarloNeedle, MonteCarloSphere
-import numpy as np 
+from src.Boris import BorisPusher
 class Simulation:
     def __init__(self, experiment: Experiment):
         self.experiment = experiment
@@ -35,6 +36,12 @@ class Simulation:
             initial_positions[i] = initial_settings[0]
             initial_velocities[i] = initial_settings[1]
 
-        electrons = Electrons(initial_positions, initial_velocities, cathode)   
+        dt = 1e-5/N;    # initial time step before adaptive step size computation
+
+        electrons = Electrons(initial_positions, initial_velocities, cathode, dt)   
         
-        
+        #running the simulation for Nsteps
+        for step in range(self.Nsteps):
+
+            BorisPusher(electrons, self.experiment.MagneticField)       #updating the positions and velocities of electrons using the Boris algorithm
+            

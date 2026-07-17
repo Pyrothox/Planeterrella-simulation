@@ -10,6 +10,8 @@ def load_experiment(file_path):
     with open(file_path, "rb") as f:
         d = tomllib.load(f)
     
+    collisions = d["collisions"]
+
     # Read gas parameters
     gas_params = d["Gas"]
     species = gas_params["species"]
@@ -78,6 +80,6 @@ def load_experiment(file_path):
     simulation_settings = d["Simulation"]
 
     planeterrella = Planeterrella(cathode = cathode, anode=anode, dome=dome)
-    experiment = Experiment(planeterrella=planeterrella, gas=gas, simulationSettings=simulation_settings)
+    experiment = Experiment(planeterrella=planeterrella, gas=gas, simulationSettings=simulation_settings, collisions = collisions)
 
     return experiment
