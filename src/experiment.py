@@ -9,3 +9,4 @@ class Experiment:
         self.simSettings = simulationSettings
         self.collisions = collisions
         self.MagneticField = fields.MagneticField(planeterrella)
+        self.ElectricField = fields.ElectricField(planeterrella, simulationSettings["voltage"])

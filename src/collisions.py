@@ -1,6 +1,6 @@
 import numpy as np
 from src.particles import Electrons
-
+from cross_sections import cross_section_inelastic_N2, cross_section_inelastic_O2, cross_section 
 _E_CHARGE = 1.602176634e-19
 _ME = 9.1093837015e-31
 _R_GAS = 8.314
@@ -34,4 +34,5 @@ class CollisionEngine:
         nN2 = self.nN2
         nO2 = self.nO2
 
-        #
+        # N2
+        

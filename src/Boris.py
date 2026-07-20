@@ -34,7 +34,7 @@ def BorisPusher(electrons:Electrons, magnetic_field : MagneticField):
     alive = electrons.alive
     if alive.sum() == 0:
         return  # No alive electrons to update
-    dt = 0.05*cyclotron_dt(electrons, magnetic_field)  # Calculate the cyclotron time step
+    dt = 0.25*cyclotron_dt(electrons, magnetic_field)  # Calculate the cyclotron time step
     pos = electrons.position[alive]
     vel = electrons.velocity[alive]
 

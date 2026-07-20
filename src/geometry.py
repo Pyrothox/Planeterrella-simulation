@@ -27,7 +27,7 @@ class Dipole:
     def __init__(self, shere : Sphere):
         self.position = shere.position
         self.direction = shere.direction_vector
-        self.moment = 50
+        self.moment = 250 #A/m2
 
 class Planeterrella:
     def __init__(self, cathode: Sphere | Needle, anode: Sphere | Needle, dome: Dome):
@@ -52,10 +52,9 @@ class Planeterrella:
         counter = 0
         alive = np.ones(positions.shape[0], dtype=bool)
         for i, pos in enumerate(positions):
-            if pos[2] < 0 or pos[1]**2 + pos[0]**2 > self.dome.radius**2:
+            if pos[2] < 0 or pos[1]**2 + pos[0]**2 > self.dome.radius**2 or pos[2] > self.dome.height:
                 alive[i] = False
                 counter += 1
-        print(f"Number of particles out of bounds: {counter}")
         return alive
             
 

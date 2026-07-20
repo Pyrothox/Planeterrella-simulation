@@ -1,7 +1,7 @@
 # Electric and Magnetic fields for the Planeterrella simulation
 import numpy as np
 from abc import ABC, abstractmethod
-from src.geometry import Planeterrella, Dipole
+from src.geometry import Planeterrella, Dipole, Sphere, Needle
 
 class Fields(ABC):
     @abstractmethod
@@ -39,9 +39,29 @@ class ElectricField(Fields):
         self.anode = planeterrella.anode
         self.voltage = voltage
 
-    def at(self, position: np.ndarray) -> np.ndarray:
-        pass
-        #TODO create a simple electric field, static, same as B, and then use interpolation for fast pusher. 
+        if isinstance(self.cathode, Sphere) and isinstance(self.anode, Sphere):     # 2 sheres configuration
+            eps0 = 8.854187817e-12  # Permittivity of free space
+            R1 = self.cathode.radius
+            R2 = self.anode.radius
+            d = np.linalg.norm(self.anode.position - self.cathode.position)
+            V = self.voltage
+            Q = 4 * np.pi * eps0 * V / (1/R1 - 1/R2 + 2/d)
+
+        else:       # 1 shere and 1 needle configuration
+            if isinstance(self.cathode, Needle):
+                needle = self.cathode
+            else:
+                needle = self.anode
+            L = needle.lc + needle.lb
+            R = needle.r
+            V = self.voltage
+
+            Q = 2 * np.pi * eps0 * V * L / np.log(2 * L / R)
+
+        self.Q = Q
+
+
+    def at(self, position:np.ndarray) -> np.ndarray:
         """
         Parameters
         ----------
@@ -51,18 +71,17 @@ class ElectricField(Fields):
         -------
         E : (N,3) ndarray
         """
-        E = np.zeros_like(position)
+        # For simplicity, we assume a uniform electric field between the cathode and anode.
+        # This is a simplification and may not represent the actual field distribution.
+        eps0 = 8.854187817e-12  # Permittivity of free space
+        k= 1/(4*np.pi*eps0)
 
-        # For simplicity, we will assume that the cathode is a point charge and the anode is a grounded sphere.
-        # This is not physically accurate but serves as a placeholder for the actual implementation.
-
-        # Cathode as point charge
-        r_cathode = position - self.cathode.position
-        r_cathode_norm = np.linalg.norm(r_cathode, axis=1)
-        q_cathode = 1e-9  # Charge in Coulombs (placeholder value)
-        epsilon_0 = 8.854187817e-12  # F/m
-        E += q_cathode/(4*np.pi*epsilon_0) * r_cathode/r_cathode_norm[:, None]**3
-
-        # Anode as grounded sphere (no contribution to E field in this simple model)
-
+        Q = self.Q
+        # charges ponctuelles
+        pos1 = self.cathode.position
+        pos2 = self.anode.position
+        r1 = position - pos1[:,None]  #(N,3)
+        r2 = position - pos2[:,None]  #(N,3)
+        n1, n2 = np.linalg.norm(r1, axis=1), np.linalg.norm(r2, axis=1)  #(N,)
+        E = k * Q * (r1/n1[:,None]**3 - r2/n2[:,None]**3)  #(N,3)
         return E

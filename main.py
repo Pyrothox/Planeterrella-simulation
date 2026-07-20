@@ -7,8 +7,8 @@ def main():
     experiment = load_experiment("config.toml")
     print("Experiment configuration loaded successfully.")
     print("Rendering experiment...")
-    renderer = Renderer()
-    renderer.render_empty(experiment)
+    renderer = Renderer(experiment)
+    renderer.render_empty()
     # render_empty(experiment)
 
     simulation = Simulation(experiment)
