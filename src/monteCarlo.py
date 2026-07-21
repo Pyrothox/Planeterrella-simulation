@@ -84,13 +84,15 @@ def MonteCarloSphere(sphere: Sphere, V: float):
     global_vel : np.ndarray
         The initial velocity of the electron in the global frame.
     """
-    # position
-    theta = uniform(0, 2*np.pi)
-    phi = uniform(0, np.pi)
+    
     r = sphere.radius
-    x = r * np.sin(phi) * np.cos(theta)
-    y = r * np.sin(phi) * np.sin(theta)
-    z = r * np.cos(phi)
+
+    # position
+    z = uniform(-r, r)
+    theta = uniform(0, 2*np.pi)
+    rho = np.sqrt(r**2 - z**2)
+    x = rho * np.cos(theta)
+    y = rho * np.sin(theta)
     local_pos = np.array([x, y, z])
     global_pos = local_pos + sphere.position
 
@@ -102,12 +104,14 @@ def MonteCarloSphere(sphere: Sphere, V: float):
     # sample direction in a hemisphere around local z, then rotate to align with outward normal
     n = local_pos / r
     psi = uniform(0, 2*np.pi)
-    elevation = uniform(0, np.pi/2)
-    local_vel = np.array(
-        [v*np.cos(elevation)*np.cos(psi), 
-         v*np.cos(elevation)*np.sin(psi),
-         v*np.sin(elevation)]
-         )
+    u = uniform(0, 1)
+    theta_prime = np.arcsin(np.sqrt(u))   # cosine-weighted (Lambertian) sampling
+    elevation = np.pi/2 - theta_prime
+    local_vel = np.array([
+        v*np.cos(elevation)*np.cos(psi),
+        v*np.cos(elevation)*np.sin(psi),
+        v*np.sin(elevation)
+    ])
 
     temp = np.array([0, 0, 1])
     if np.allclose(n, temp):

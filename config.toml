@@ -9,12 +9,12 @@ mode = 3   # Mode of the planeterrella :
 collisions = true   #enable collisions
 
 [Simulation]
-Nparticles = 50
-Nsteps = 1000
-voltage = 1000 # Voltage in Volts
+Nparticles = 500
+Nsteps = 10000
+voltage = 100 # Voltage in Volts
 
 [Gas]
-pressure = 25 # Pressure in Pa
+pressure = 2.5 # Pressure in Pa
 temperature = 300 # Temperature in K
 [[Gas.species]]
 name = "N2"

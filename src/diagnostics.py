@@ -19,14 +19,30 @@ class TrajectoryRecorder:
         """
         return self.trajectories
     
+class CollisionRecorder:    
+    collision_dtype = np.dtype([
+        ("position", np.float32, (3,)),  # Position of the electron at the time of collision
+        ("inelastic", np.bool_),  # Whether the collision was inelastic
+        ("specie", np.bool_),  # True for N2, False for O2
+    ])
+    def __init__(self, size = 10_000_000):
+        self.collisions = np.empty(size, dtype=self.collision_dtype)
+        self.ncollisions = 0  # Counter for the number of recorded collisions
+
+    def record(self, pos, inelastic, specie):
+        self.collisions[self.ncollisions] = (pos, inelastic, specie)
+        self.ncollisions += 1
 
 
 class Diagnostics:
-    def __init__(self, trackedParticles : Particles):
+    def __init__(self, trackedParticles : Particles, collisionsEnabled: bool = False):
         self.time = []
         self.trackedParticles = trackedParticles
         self.trajectoryRecorder = TrajectoryRecorder(trackedParticles)  # Initialize the trajectory recorder
-        
+        self.collisionRecorder = CollisionRecorder() if collisionsEnabled else None  # Initialize the collision recorder
+
     def recordStep(self, time):
         self.time.append(time)
-        self.trajectoryRecorder.record()  # Record the positions of tracked particles at this time step
+    
+    def recordCollision(self, pos, inelastic, specie):
+        self.collisionRecorder.record(pos, inelastic, specie)

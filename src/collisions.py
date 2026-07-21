@@ -3,6 +3,8 @@ from src.particles import Electrons
 from cross_sections.cross_section_inelastic_N2 import cross_section_inelastic_N2
 from cross_sections.cross_section_inelastic_O2 import cross_section_inelastic_O2
 from cross_sections.cross_section_elastic import cross_section_elastic
+from src.diagnostics import Diagnostics, CollisionRecorder
+
 _E_CHARGE = 1.602176634e-19     #eV to Joule conversion factor
 _ME = 9.1093837015e-31
 _R_GAS = 8.314
@@ -48,7 +50,7 @@ class CollisionEngine:
 
     
 
-    def collide(self, electrons: Electrons, diagnostics):
+    def collide(self, electrons: Electrons, diagnostics: Diagnostics = None, debug = False):
         alive = electrons.alive
         pos = electrons.position[alive]
         v = electrons.velocity[alive]
@@ -88,10 +90,17 @@ class CollisionEngine:
         is_N2 = self.rng.random(idx.size) <= nu_N2[idx] / nu_tot[idx]        #collided with N2
         
         new_velocities = v.copy()  # Work on the full alive slice so absolute indices remain valid
-        self._resolveSpecie(idx[is_N2], v, pos, Ec, new_velocities, nu_N2_el, nu_N2, Qex_N2, Qex_N2p, loss_n2, loss_n2p, diagnostics = None)        #processing collisions with N2
-        self._resolveSpecie(idx[~is_N2], v, pos, Ec, new_velocities, nu_O2_el, nu_O2, Qex_O2, Qex_O2p, loss_o2, loss_o2p, diagnostics = None)      #processing collisions with O2
+        self._resolveSpecie(idx[is_N2], v, pos, Ec, new_velocities, nu_N2_el, nu_N2, Qex_N2, Qex_N2p, loss_n2, loss_n2p, "N2", diagnostics = diagnostics)        #processing collisions with N2
+        self._resolveSpecie(idx[~is_N2], v, pos, Ec, new_velocities, nu_O2_el, nu_O2, Qex_O2, Qex_O2p, loss_o2, loss_o2p, "O2", diagnostics = diagnostics)      #processing collisions with O2
 
         electrons.velocity[alive] = new_velocities  # Update the velocities of collided electrons
+
+        if debug:
+            print("Ec range (eV):", eV.min(), eV.max(), "median:", np.median(eV))
+            print("Fraction of electrons above N2 B3 threshold (7.35eV):", np.mean(eV > 7.35))
+            print("Fraction above N2 C3 threshold (11.03eV):", np.mean(eV > 11.03))
+            print("nu_N2_inel stats:", nu_N2_inel.min(), nu_N2_inel.max(), nu_N2_inel.mean())
+            print("nu_N2_el stats:", nu_N2_el.min(), nu_N2_el.max(), nu_N2_el.mean())
 
     @staticmethod
     def _sampleChannel(weights, rng):
@@ -117,17 +126,19 @@ class CollisionEngine:
         channel_idx = np.where(totals > 0, channel_idx, -1)  # Set to -1 for particles with no available channels
         return channel_idx
 
-    def _resolveSpecie(self, idx, vel, pos, Ec, new_vel, nu_el, nu_species, Q_ex, Q_ex_p, loss, loss_p, diagnostics):
+    def _resolveSpecie(self, idx, vel, pos, Ec, new_vel, nu_el, nu_species, Q_ex, Q_ex_p, loss, loss_p, specie, diagnostics : Diagnostics = None):
         if idx.size == 0:
             return 
-        
+        specieBool = True if specie == "N2" else False
+
         #elastic collision ? 
         elastic = self.rng.random(idx.size) <= nu_el[idx] / nu_species[idx]
         el_idx = idx[elastic]
         if el_idx.size > 0:
             speed = np.linalg.norm(vel[el_idx], axis=1)
             new_vel[el_idx] = self._rotate_isotropic_dir(el_idx.size, self.rng) * speed[:, None]       #new travelling direction
-            #TODO should we record elastic collision that don't create light ? 
+            if diagnostics is not None:
+                [diagnostics.recordCollision(pos[el_idx[i]], False, specieBool) for i in range(el_idx.size)]
 
         #inelastic collision ? 
         inel_idx = idx[~elastic]
@@ -144,5 +155,5 @@ class CollisionEngine:
                 new_speed = np.sqrt(2 * new_E / _ME)
                 new_vel[valid_inel_idx] = new_dir * new_speed[:, None]
                 if diagnostics is not None:
-                    pass
-                    #TODO create diagnostic for collisions you BAKA
+                    
+                    [diagnostics.recordCollision(pos[valid_inel_idx[i]], True, specieBool) for i in range(valid_inel_idx.size)]  # Record inelastic collision events
