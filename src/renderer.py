@@ -8,12 +8,12 @@ import numpy as np
 class Renderer:
     def __init__(self, experiment: Experiment):
         self.plotter = pv.Plotter()
-        self.plotter.show(interactive_update=True)
+        self.plotter.show(interactive_update=True)   #letting python code run while the plotter is opened
         self.experiment = experiment
         self.plotter.set_background("black")
 
     def lock(self):
-        self.plotter.show(interactive_update=False)
+        self.plotter.show(interactive_update=False)     # if the interactive_update is set to True, the code will automatically close the windows when main() is done
 
     def render_empty(self):
         geo = self.experiment.planeterrella
@@ -59,142 +59,139 @@ class Renderer:
             electron_points = trajectories[i]
             raw_segments = pv.lines_from_points(electron_points)
             plotter.add_mesh(raw_segments, color='red', line_width=1)
-            
-        
-
-    def PlotB(self, n_points=10):
-        geo = self.experiment.planeterrella
-        # Create a grid of points in the simulation space
-        x = np.linspace(-geo.dome.radius, geo.dome.radius, n_points)
-        y = np.linspace(-geo.dome.radius, geo.dome.radius, n_points)
-        z = np.linspace(0, geo.dome.height, n_points)
-        X, Y, Z = np.meshgrid(x, y, z)
-        points = np.vstack([X.ravel(), Y.ravel(), Z.ravel()]).T
-
-        # Calculate the magnetic field at each point
-        B = self.experiment.MagneticField.at(points)
-
-        # Create a PyVista plotter
-        plotter = self.plotter
-
-        # Add the magnetic field vectors to the plotter
-        plotter.add_arrows(points, B, mag=1.0, color='blue')
-
-    def PlotB1(self, n=10):
-        BOUNDS = (-2,2,-2,2,0,2)
-        RESOLUTION = 15
-
-        grid = pv.ImageData(
-            dimensions=(RESOLUTION, RESOLUTION, RESOLUTION),
-            spacing=(
-                (BOUNDS[1] - BOUNDS[0]) / (RESOLUTION - 1),
-                (BOUNDS[3] - BOUNDS[2]) / (RESOLUTION - 1),
-                (BOUNDS[5] - BOUNDS[4]) / (RESOLUTION - 1),
-            ),
-            origin=(BOUNDS[0], BOUNDS[2], BOUNDS[4]),)
-        
-        points = grid.points
-        B = self.experiment.MagneticField.at(points)
-        B_magnitude = np.linalg.norm(B, axis=1)
-
-        grid["B"] = B
-        grid["B_magnitude"] = B_magnitude
-
-        plotter = self.plotter
-
-        glyphs = grid.glyph(orient="B", scale="B_magnitude", factor=0.3)
-        plotter.add_mesh(glyphs, cmap="plasma", scalars="B_magnitude", show_scalar_bar=True)
-
-        seed = pv.Sphere(radius=0.1, center=(0, -0.1, 0.2), theta_resolution=12, phi_resolution=12)
-        streamlines = grid.streamlines_from_source(
-            seed,
-            vectors="B",
-            max_length=50.0,
-            integration_direction="both",
-        )
-        if streamlines.n_points > 0:
-            plotter.add_mesh(streamlines.tube(radius=0.005), color="cyan")
-        
-        # --- Optional: translucent magnitude slice for spatial context ---
-        slice_mesh = grid.slice(normal="z")
-        plotter.add_mesh(slice_mesh, scalars="B_magnitude", cmap="coolwarm", opacity=0.4)
-        
-        plotter.add_axes()
-        plotter.show_grid()
-        plotter.add_title("Magnetic Field Visualization")
-        plotter.show()
 
 
+### standalone function to render the B field lines, can be used without creating a Renderer object
+def _unit_field(B, positions):
+    b = B(positions)
+    norm = np.linalg.norm(b, axis=1, keepdims=True)
+    norm[norm < 1e-15] = 1e-15
+    return  b / norm, np.linalg.norm(b, axis=1)
 
-    def PlotB2(self):
-        geo = self.experiment.planeterrella
+def _trace_batch(B, seeds, spheres, step_size, max_steps, max_radius):
+    """ Trace lines using a simple Runge-Kutta 4th order integrator. Returns a list of points and B magnitudes for each seed point."""
+    n = seeds.shape[0]
+    pos = seeds.copy()
+    active = np.ones(n, dtype=bool)
+    points_out = [[] for _ in range(n)]
+    bmag_out = [[] for _ in range(n)]
+    centers = np.array([s.position for s in spheres], dtype=float)
+    radii = np.array([s.radius for s in spheres], dtype=float)
 
-        bounds = [-geo.dome.radius, geo.dome.radius, -geo.dome.radius, geo.dome.radius, -geo.dome.radius, geo.dome.radius]
-        resolution = (100, 100, 100)
+    for _ in range(max_steps):
+        if not active.any():
+            break
+        idx = np.where(active)[0]
+        p = pos[idx]
 
-        grid = pv.ImageData(
-        dimensions=resolution,
-        spacing=(
-            (bounds[1] - bounds[0]) / (resolution[0] - 1),
-            (bounds[3] - bounds[2]) / (resolution[1] - 1),
-            (bounds[5] - bounds[4]) / (resolution[2] - 1),
-        ),
-        origin=(bounds[0], bounds[2], bounds[4]),
-        )
+        k1, bm1 = _unit_field(B, p)
+        k2, _ = _unit_field(B, p + 0.5 * step_size * k1)
+        k3, _ = _unit_field(B, p + 0.5 * step_size * k2)
+        k4, _ = _unit_field(B, p + step_size * k3)
+        newp = p + (step_size / 6.0) * (k1 + 2 * k2 + 2 * k3 + k4)
+        pos[idx] = newp
 
-        grid["B"] = self.experiment.MagneticField.at(grid.points)
-        r1 = geo.cathode.radius
-        r2 = geo.anode.radius
-        pos1 = geo.cathode.position
-        pos2 = geo.anode.position
-        seed1 = pv.Disc(
-            center=pos1,
-            inner=r1 * 1.05,
-            outer=r1 * 3.0,
-            r_res=2,  # Increased from 2 -> 8 (more radial concentric rings)
-            c_res=12,  # Increased from 12 -> 36 (more angular points per ring)
-        )
+        stop = np.linalg.norm(newp, axis=1) > max_radius
+        for c, r in zip(centers, radii):
+            stop |= np.linalg.norm(newp - c, axis=1) < 1.001 * r
 
-        seed2 = pv.Disc(
-            center=pos2,
-            inner=r2 * 1.05,
-            outer=r2 * 3.0,
-            r_res=2,
-            c_res=12,
-        )
+        for j, i in enumerate(idx):
+            points_out[i].append(newp[j].copy())
+            bmag_out[i].append(bm1[j])
+        active[idx[stop]] = False
 
-        seeds  = seed1 + seed2
+    return points_out, bmag_out
 
-        # Trace streamlines in both directions
-        # Generate Streamlines
-        strl = grid.streamlines_from_source(
-            seeds,
-            vectors="B",
-            max_length=180,
-            initial_step_length=0.1,
-            integration_direction="both",
-        )
+def _orthonormal_basis(axis):
+    """ Creates a local 3D orthonormal basis from one axis"""
+    axis = axis / np.linalg.norm(axis)
+    helper = np.array([1.0, 0.0, 0.0]) if abs(axis[0]) < 0.9 else np.array([0.0, 1.0, 0.0])
+    u = np.cross(axis, helper); u /= np.linalg.norm(u)
+    v = np.cross(axis, u)
+    return u, v
 
+def seed_points_for_sphere(sphere : Sphere, n_azimuth=12, colatitudes_deg=(15, 30, 45),surface_offset=1.02):
+    """Seed points just outside the sphere, in rings around both magnetic poles."""
+    R = sphere.radius
+    center = sphere.position
+    axis = sphere.direction_vector
+    axis = axis / np.linalg.norm(axis)
+    u, v = _orthonormal_basis(axis)
 
-        # ==========================================
-        # 4. Plotting (Your exact style)
-        # ==========================================
-        pl = pv.Plotter()
+    seeds = []
+    azimuths = np.linspace(0, 2 * np.pi, n_azimuth, endpoint=False)
+    for pole_sign in (+1, -1):
+        pole_axis = pole_sign * axis
+        for colat_deg in colatitudes_deg:
+            colat = np.deg2rad(colat_deg)
+            radial = np.cos(colat) * pole_axis
+            for az in azimuths:
+                tangential = np.sin(colat) * (np.cos(az) * u + np.sin(az) * v)
+                d = radial + tangential
+                d /= np.linalg.norm(d)
+                seeds.append(center + R * surface_offset * d)
+    return np.array(seeds)
+    
+def trace_field_lines(F, spheres, n_azimuth=12, colatitudes_deg=(15, 30, 45),step_size=0.002, max_steps=1500, max_radius=1.0):
+    """
+    Trace magnetic field lines starting from specified colatitudes and azimuths around each sphere.
+    """
+    seeds = np.vstack([seed_points_for_sphere(s, n_azimuth, colatitudes_deg) for s in spheres])
+    pts, bmag = _trace_batch(F, seeds, spheres, step_size, max_steps, max_radius)    
+    lines = []
+    for i in range(seeds.shape[0]):
+        full_points = [seeds[i]] + pts[i]
+        full_bmag = [np.linalg.norm(F(seeds[i][None, :])[0])] + bmag[i]
+        if len(full_points) >= 2:
+            lines.append({"points": np.array(full_points), "bmag": np.array(full_bmag)})
+    return lines
 
-        # Field lines as tubes
-        pl.add_mesh(
-            strl.tube(radius=0.001),
-            cmap="bwr",
-            ambient=0.2,
-            scalar_bar_args={"title": "|B| Field"},
-        )
+def render_B_field(experiment: Experiment):
+    """
+    Render the magnetic field lines of the experimental setup. Made to be used on its own.
+    """
+    B = experiment.MagneticField.at
+    spheres = [experiment.planeterrella.cathode, experiment.planeterrella.anode]
+    n_azimuth=12
+    colatitudes_deg=(15, 30, 45)
+    step_size=0.002
+    max_steps=1500
+    max_radius=1.0
+    sphere_colors=None
+    line_colormap="plasma"
+    tube_radius=0.0015
+    background="black"
 
-        # Add the 2 Spheres (Replacing your coil_block)
-        s1_mesh = pv.Sphere(radius=r1, center=pos1)
-        s2_mesh = pv.Sphere(radius=r2, center=pos2)
+    lines = trace_field_lines(B, spheres, n_azimuth, colatitudes_deg,
+                               step_size, max_steps, max_radius)
+    plotter = pv.Plotter()
+    plotter.background_color = background
 
-        pl.add_mesh(s1_mesh, color="w", opacity=0.9)
-        pl.add_mesh(s2_mesh, color="w", opacity=0.9)
+    all_bmag = np.concatenate([l["bmag"] for l in lines]) if lines else np.array([0, 1])
+    clim = (np.percentile(all_bmag, 1), np.percentile(all_bmag, 99))
 
-        pl.camera.zoom(1.8)
-        pl.show()
+    for line in lines:
+        pts = line["points"]
+        if pts.shape[0] < 2:
+            continue
+        poly = pv.PolyData()
+        poly.points = pts
+        poly.lines = np.hstack([[pts.shape[0]], np.arange(pts.shape[0])])
+        poly["Bmag"] = line["bmag"]
+        tube = poly.tube(radius=tube_radius)
+        plotter.add_mesh(tube, scalars="Bmag", cmap=line_colormap,
+                          clim=clim, show_scalar_bar=False)
+
+    default_colors = ["#4da6ff", "#ff6b6b", "#7bed9f", "#feca57"]
+    for i, sphere in enumerate(spheres):
+        R = sphere.radius
+        pos = sphere.position
+        color = sphere_colors[i] if sphere_colors else default_colors[i % len(default_colors)]
+        mesh = pv.Sphere(radius=R, center=pos,
+                          theta_resolution=48, phi_resolution=48)
+        plotter.add_mesh(mesh, color=color, smooth_shading=True)
+
+    plotter.add_scalar_bar(title="|B| (T)", n_labels=4)
+    plotter.show()
+
+    

@@ -82,4 +82,8 @@ def load_experiment(file_path):
     planeterrella = Planeterrella(cathode = cathode, anode=anode, dome=dome)
     experiment = Experiment(planeterrella=planeterrella, gas=gas, simulationSettings=simulation_settings, collisions = collisions)
 
+    # Checking if a special debug mod is enabled : 
+    if d["Debug"]["Plot_B_field"]:
+        experiment.debug = "B_field"
+
     return experiment

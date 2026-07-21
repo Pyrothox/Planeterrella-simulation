@@ -2,11 +2,17 @@
 
 mode = 3   # Mode of the planeterrella : 
 # 0 = The needle and the small sphere
-# 1 = The needle and two spheres
+# 1 = The needle and two spheres        NOT IMPLEMENTED "yet"
 # 2 = Two spheres, the smaller one ejecting the particles
 # 3 = Two spheres, the larger one ejecting the particles
 
 collisions = true   #enable collisions
+
+[Debug]
+Plot_B_field = true # if true, will plot the B field lines instead, no simulation. 
+
+
+
 
 [Simulation]
 Nparticles = 5

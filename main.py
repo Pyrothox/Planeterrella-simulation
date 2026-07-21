@@ -1,16 +1,21 @@
 from src.config import load_experiment
 from src.experiment import Experiment
-from src.renderer import Renderer
+from src.renderer import Renderer, render_B_field
 from src.simulation import Simulation
 import h5py
 def main():
     print("Loading experiment configuration...")
     experiment = load_experiment("config.toml")
     print("Experiment configuration loaded successfully.")
+
+    if experiment.debug:            # special request that bypass the simulation
+        if experiment.debug == "B_field":
+            print("Debug mode: Plotting magnetic field lines only.")
+            render_B_field(experiment)
+        return
+
     print("Rendering experiment...")
     renderer = Renderer(experiment)
-    renderer.PlotB()
-    renderer.lock()
     renderer.render_empty()
 
     simulation = Simulation(experiment)

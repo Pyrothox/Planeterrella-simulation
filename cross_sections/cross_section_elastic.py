@@ -75,5 +75,8 @@ def cross_section_elastic(eV):
             b = -0.6549
             c = -9.802e-19
             S_O2[i] = a*Ec**b + c
-    
+    #convert from cm^2 to m^2
+    S_N2 *= 1e-4
+    S_O2 *= 1e-4
+
     return S_N2, S_O2
