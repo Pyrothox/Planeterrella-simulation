@@ -9,9 +9,9 @@ mode = 3   # Mode of the planeterrella :
 collisions = true   #enable collisions
 
 [Simulation]
-Nparticles = 500
-Nsteps = 10000
-voltage = 100 # Voltage in Volts
+Nparticles = 5
+Nsteps = 100
+voltage = 40 # Voltage in Volts
 
 [Gas]
 pressure = 2.5 # Pressure in Pa

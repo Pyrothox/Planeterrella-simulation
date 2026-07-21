@@ -80,7 +80,7 @@ class Renderer:
         # Add the magnetic field vectors to the plotter
         plotter.add_arrows(points, B, mag=1.0, color='blue')
 
-    def PlotB2(self, n=10):
+    def PlotB1(self, n=10):
         BOUNDS = (-2,2,-2,2,0,2)
         RESOLUTION = 15
 
@@ -125,3 +125,76 @@ class Renderer:
         plotter.show()
 
 
+
+    def PlotB2(self):
+        geo = self.experiment.planeterrella
+
+        bounds = [-geo.dome.radius, geo.dome.radius, -geo.dome.radius, geo.dome.radius, -geo.dome.radius, geo.dome.radius]
+        resolution = (100, 100, 100)
+
+        grid = pv.ImageData(
+        dimensions=resolution,
+        spacing=(
+            (bounds[1] - bounds[0]) / (resolution[0] - 1),
+            (bounds[3] - bounds[2]) / (resolution[1] - 1),
+            (bounds[5] - bounds[4]) / (resolution[2] - 1),
+        ),
+        origin=(bounds[0], bounds[2], bounds[4]),
+        )
+
+        grid["B"] = self.experiment.MagneticField.at(grid.points)
+        r1 = geo.cathode.radius
+        r2 = geo.anode.radius
+        pos1 = geo.cathode.position
+        pos2 = geo.anode.position
+        seed1 = pv.Disc(
+            center=pos1,
+            inner=r1 * 1.05,
+            outer=r1 * 3.0,
+            r_res=2,  # Increased from 2 -> 8 (more radial concentric rings)
+            c_res=12,  # Increased from 12 -> 36 (more angular points per ring)
+        )
+
+        seed2 = pv.Disc(
+            center=pos2,
+            inner=r2 * 1.05,
+            outer=r2 * 3.0,
+            r_res=2,
+            c_res=12,
+        )
+
+        seeds  = seed1 + seed2
+
+        # Trace streamlines in both directions
+        # Generate Streamlines
+        strl = grid.streamlines_from_source(
+            seeds,
+            vectors="B",
+            max_length=180,
+            initial_step_length=0.1,
+            integration_direction="both",
+        )
+
+
+        # ==========================================
+        # 4. Plotting (Your exact style)
+        # ==========================================
+        pl = pv.Plotter()
+
+        # Field lines as tubes
+        pl.add_mesh(
+            strl.tube(radius=0.001),
+            cmap="bwr",
+            ambient=0.2,
+            scalar_bar_args={"title": "|B| Field"},
+        )
+
+        # Add the 2 Spheres (Replacing your coil_block)
+        s1_mesh = pv.Sphere(radius=r1, center=pos1)
+        s2_mesh = pv.Sphere(radius=r2, center=pos2)
+
+        pl.add_mesh(s1_mesh, color="w", opacity=0.9)
+        pl.add_mesh(s2_mesh, color="w", opacity=0.9)
+
+        pl.camera.zoom(1.8)
+        pl.show()
