@@ -5,6 +5,7 @@ from src.geometry import Needle, Sphere
 from src.monteCarlo import MonteCarloNeedle, MonteCarloSphere
 from src.Boris import BorisPusher
 from src.diagnostics import Diagnostics
+from src.collisions import CollisionEngine
 class Simulation:
     def __init__(self, experiment: Experiment):
         self.experiment = experiment
@@ -41,12 +42,16 @@ class Simulation:
 
         electrons = Electrons(initial_positions, initial_velocities, cathode, dt)   
         diags = Diagnostics(electrons)
+        if self.experiment.collisions:
+            collisionEngine = CollisionEngine(self.experiment.gas)
+        else :
+            collisionEngine = type('Dummy', (), {'collide': lambda *args, **kwargs: None})()        #dummy collision engine that does nothing if collisions are disabled
         #running the simulation for Nsteps
         for step in range(self.Nsteps):
 
             if step !=0 : BorisPusher(electrons, self.experiment.MagneticField)       #updating the positions and velocities of electrons using the Boris algorithm
-            if self.experiment.collisions:
-                pass   #handling collisions if enabled
+
+            collisionEngine.collide(electrons, None)       # I should rly put a diagnostic in there
 
             if step % 5 == 0:
                 electrons.alive = self.experiment.planeterrella.OutofBounds(electrons.position)  # checking if electrons are out of bounds

@@ -6,6 +6,7 @@ class Particles:
         self.position = position
         self.velocity = velocity
         self.alive = np.ones(position.shape[0], dtype=bool)
+        self.dt = np.zeros(position.shape[0])  # Initialize dt array with zeros   
 
 
 class Electrons(Particles):

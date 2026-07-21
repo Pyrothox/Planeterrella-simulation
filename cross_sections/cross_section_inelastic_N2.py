@@ -76,7 +76,7 @@ _N2I_CHANNELS = [
 
 def cross_section_inelastic_N2(eV):
     """
-    Compute the total inelastic cross-section for N2 at given electron energies.
+    Compute the total inelastic cross-section for N2 at given electron energies using precomputed interpolators for various excitation and ionization channels.
 
     Parameters
     ----------
@@ -86,19 +86,19 @@ def cross_section_inelastic_N2(eV):
     Returns
     -------
     Qex_N2  : (n_ch1, N) cross sections [m^2], ground-state excitation
-    Qex_N2i : (n_ch2, N) cross sections [m^2], N2+ ion excitation (unused downstream)
-    Qex_N2p : (n_ch3, N) cross sections [m^2], N2+ production
-    loss_n2  : (n_ch1,) energy loss [J] for each N2 excitation channel
-    loss_n2p : (n_ch3,) energy loss [J] for each N2+ production channel
-    loss_n2i : (n_ch2,) energy loss [J] for each N2+ ion excitation channel
+    Qex_N2p : (n_ch2, N) cross sections [m^2], N2+ ion excitation (unused downstream)
+    Qex_N2i : (n_ch3, N) cross sections [m^2], N2+ production
+    loss_n2  : (n_ch1,) energy loss [eV] for each N2 excitation channel
+    loss_n2p : (n_ch3,) energy loss [eV] for each N2+ production channel
+    loss_n2i : (n_ch2,) energy loss [eV] for each N2+ ion excitation channel
     """
 
     Qex_N2 = np.stack([channel.evaluate(eV) for channel in _N2_CHANNELS], axis=0)
     Qex_N2p = np.stack([channel.evaluate(eV) for channel in _N2P_CHANNELS], axis=0)
     Qex_N2i = np.stack([channel.evaluate(eV) for channel in _N2I_CHANNELS], axis=0)
     
-    loss_n2 = np.array([channel.loss_eV for channel in _N2_CHANNELS]) * _EV_TO_J
-    loss_n2p = np.array([channel.loss_eV for channel in _N2P_CHANNELS]) * _EV_TO_J
-    loss_n2i = np.array([channel.loss_eV for channel in _N2I_CHANNELS]) * _EV_TO_J
+    loss_n2 = np.array([channel.loss_eV for channel in _N2_CHANNELS]) 
+    loss_n2p = np.array([channel.loss_eV for channel in _N2P_CHANNELS]) 
+    loss_n2i = np.array([channel.loss_eV for channel in _N2I_CHANNELS]) 
     
     return Qex_N2, Qex_N2p, Qex_N2i, loss_n2, loss_n2p, loss_n2i

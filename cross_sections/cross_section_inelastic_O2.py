@@ -85,7 +85,7 @@ _O2C_LOSS_EV = 0.0      #No implementation
 
 def cross_section_inelastic_O2(eV):
     """
-    Compute the total inelastic cross-section for O2 at given electron energies.
+    Compute the total inelastic cross-section for O2 at given electron energies using precomputed interpolators for various excitation and ionization channels.
 
     Parameters
     ----------
@@ -97,17 +97,17 @@ def cross_section_inelastic_O2(eV):
     Qex_O2  : (n_ch1, N) cross sections [m^2], ground-state excitation
     Qex_O2p : (n_ch2, N) cross sections [m^2], O2+ production
     Qex_O2c : (n_ch3, N) cross sections [m^2], O2- capture
-    loss_o2  : (n_ch1,) energy loss [J] for each O2 excitation channel
-    loss_o2p : (n_ch2,) energy loss [J] for each O2+ production channel
-    loss_o2c : (n_ch3,) energy loss [J] for each O2- capture channel
+    loss_o2  : (n_ch1,) energy loss [eV] for each O2 excitation channel
+    loss_o2p : (n_ch2,) energy loss [eV] for each O2+ production channel
+    loss_o2c : (n_ch3,) energy loss [eV] for each O2- capture channel
     """
 
     Qex_O2 = np.stack([channel.evaluate(eV) for channel in _O2_CHANNELS], axis=0)
     Qex_O2p = np.stack([channel.evaluate(eV) for channel in _O2P_CHANNELS], axis=0)
     Qex_O2c = np.zeros((1, eV.shape[0]))  # Placeholder for O2- capture cross-section
 
-    loss_o2 = np.array([channel.loss_eV for channel in _O2_CHANNELS]) * _EV_TO_J
-    loss_o2p = np.array([channel.loss_eV for channel in _O2P_CHANNELS]) * _EV_TO_J
+    loss_o2 = np.array([channel.loss_eV for channel in _O2_CHANNELS])
+    loss_o2p = np.array([channel.loss_eV for channel in _O2P_CHANNELS])
     loss_o2c = np.array([_O2C_LOSS_EV]) # not implemented
     
     return Qex_O2, Qex_O2p, Qex_O2c, loss_o2, loss_o2p, loss_o2c

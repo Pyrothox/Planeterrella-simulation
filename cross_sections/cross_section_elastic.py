@@ -3,18 +3,16 @@ from numba import njit
 _E_CHARGE = 1.602176634e-19
 _ME = 9.1093837015e-31
 
-@njit(cavhe = True)
-def cross_section(v, alive):
+@njit(cache = True)
+def cross_section_elastic(eV):
     """
     Given incident electron velocity vector v, computes N2 and O2 cross sections
     for use in Monte Carlo collision sampling.
 
     Parameters
     ----------
-    v : ndarray
-        array of incident electron velocity vectors [m/s] (N,3)
-    alive : ndarray
-        boolean array indicating which electrons are still alive (N,)
+    eV : ndarray
+        array of incident electron energies in eV (N,)
 
     Returns
     -------
@@ -23,17 +21,14 @@ def cross_section(v, alive):
     Q_O2 : float
         O2 cross section [m^2]
     """
-    N = v.shape[0]
+    N = eV.shape[0]
     S_N2 = np.zeros(N)
     S_O2 = np.zeros(N)
 
     for i in range(N):
-        if not alive[i]:
-            continue
-        vx = v[i, 0]
-        vy = v[i, 1]
-        vz = v[i, 2]
-        Ec = 0.5 * _ME * (vx**2 + vy**2 + vz**2)/_E_CHARGE  # Kinetic energy in eV
+        # if not alive[i]:       eV only given for alive electrons  
+        #     continue
+        Ec = eV[i]  # Kinetic energy in eV
 
         # N2 cross section      (following provided matlab code)
         if Ec < 3.5:
