@@ -85,5 +85,7 @@ def load_experiment(file_path):
     # Checking if a special debug mod is enabled : 
     if d["Debug"]["Plot_B_field"]:
         experiment.debug = "B_field"
+    if d["Debug"]["Plot_E_field"]:
+        experiment.debug = "E_field"
 
     return experiment

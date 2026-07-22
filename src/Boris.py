@@ -1,6 +1,6 @@
 import numpy as np
 from src.particles import Electrons
-from src.fields import MagneticField
+from src.fields import MagneticField, ElectricField
 
 q = -1.602176634e-19  # Charge of an electron in Coulombs
 m = 9.1093837015e-31  # Mass of an electron in kilograms
@@ -26,7 +26,7 @@ def cyclotron_dt(electrons:Electrons, magnetic_field: MagneticField) -> float:
     # Return the minimum cyclotron period as the time step
     return np.min(T_c)
 
-def BorisPusher(electrons:Electrons, magnetic_field : MagneticField):
+def BorisPusher(electrons:Electrons, magnetic_field : MagneticField, ElectricField : ElectricField):
     """
     Update the positions and velocities of electrons using the Boris algorithm.
     """
@@ -42,8 +42,11 @@ def BorisPusher(electrons:Electrons, magnetic_field : MagneticField):
     # B field
     B0 = magnetic_field.at(pos)
     
-    #assuming no E field
-    v_minus = vel
+    if ElectricField is not None:
+        E0 = ElectricField.at(pos)
+        v_minus = vel + (0.5 * qm * E0 * dt)  # first half of electric acceleration
+    else:
+        v_minus = vel
 
     t = 0.5 * qm * B0 * dt # rotation vector
     t_mag2 = np.sum(t**2, axis=1)   # magnitude squared of t
@@ -52,9 +55,12 @@ def BorisPusher(electrons:Electrons, magnetic_field : MagneticField):
     v_prime = v_minus + np.cross(v_minus, t)  # intermediate velocity
     v_plus = v_minus + np.cross(v_prime, s)    # final velocity
 
-    # second half of electric acceleration goes there if E
+    if ElectricField is not None:
+        v_new = v_plus + (0.5 * qm * E0 * dt)  # second half of electric acceleration
+    else:
+        v_new = v_plus
 
-    x_new = pos + v_plus * dt  # update position
+    x_new = pos + v_new * dt  # update position
 
     electrons.position[alive] = x_new
     electrons.velocity[alive] = v_plus

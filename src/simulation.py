@@ -45,7 +45,8 @@ class Simulation:
 
             for step in range(self.Nsteps):
 
-                if step !=0 : BorisPusher(electrons, self.experiment.MagneticField)       #updating the positions and velocities of electrons using the Boris algorithm
+                BorisPusher(electrons, self.experiment.MagneticField, self.experiment.ElectricField)       #updating the positions and velocities of electrons using the Boris algorithm
+
                 if step % (self.Nsteps // 10) == 0:
                 #if False:
                     collisionEngine.collide(electrons, diags, debug=True)

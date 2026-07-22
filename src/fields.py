@@ -12,7 +12,7 @@ class MagneticField(Fields):
     def __init__(self, planeterrella: Planeterrella):
         self.dipoles: list[Dipole] = planeterrella.dipoles
 
-    def at(self, position: np.ndarray) -> np.ndarray:
+    def at(self, positions: np.ndarray) -> np.ndarray:
         """
         Parameters
         ----------
@@ -22,10 +22,10 @@ class MagneticField(Fields):
         -------
         B : (N,3) ndarray
         """
-        B = np.zeros_like(position)
+        B = np.zeros_like(positions)
 
         for dipole in self.dipoles:
-            r = position-dipole.position    #(N,3)
+            r = positions-dipole.position    #(N,3)
             r_norm = np.linalg.norm(r, axis=1)  #(N,)
             m = dipole.moment * dipole.direction    #(3,)
             m_dot_r = r @ m  #(N,)
@@ -61,7 +61,7 @@ class ElectricField(Fields):
         self.Q = Q
 
 
-    def at(self, position:np.ndarray) -> np.ndarray:
+    def at(self, positions:np.ndarray) -> np.ndarray:
         """
         Parameters
         ----------
@@ -80,8 +80,8 @@ class ElectricField(Fields):
         # charges ponctuelles
         pos1 = self.cathode.position
         pos2 = self.anode.position
-        r1 = position - pos1[:,None]  #(N,3)
-        r2 = position - pos2[:,None]  #(N,3)
+        r1 = positions - pos1  #(N,3)
+        r2 = positions - pos2  #(N,3)
         n1, n2 = np.linalg.norm(r1, axis=1), np.linalg.norm(r2, axis=1)  #(N,)
         E = k * Q * (r1/n1[:,None]**3 - r2/n2[:,None]**3)  #(N,3)
         return E

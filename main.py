@@ -1,8 +1,9 @@
 from src.config import load_experiment
 from src.experiment import Experiment
-from src.renderer import Renderer, render_B_field
+from src.renderer import Renderer, render_B_field, render_E_field
 from src.simulation import Simulation
 import h5py
+
 def main():
     print("Loading experiment configuration...")
     experiment = load_experiment("config.toml")
@@ -12,6 +13,9 @@ def main():
         if experiment.debug == "B_field":
             print("Debug mode: Plotting magnetic field lines only.")
             render_B_field(experiment)
+        elif experiment.debug == "E_field":
+            print("Debug mode: Plotting electric field lines only.")
+            render_E_field(experiment)
         return
 
     print("Rendering experiment...")

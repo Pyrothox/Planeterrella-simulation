@@ -10,7 +10,7 @@ collisions = true  #enable collisions
 
 [Debug]
 Plot_B_field = false # if true, will plot the B field lines instead, no simulation. 
-
+Plot_E_field = false # if true, will plot the E field lines instead, no simulation.
 
 
 
@@ -18,9 +18,10 @@ Plot_B_field = false # if true, will plot the B field lines instead, no simulati
 Nparticles = 500
 Nsteps = 10000
 voltage = 40 # Voltage in Volts
+E_field = true
 
 [Gas]
-pressure = 0.25 # Pressure in Pa
+pressure = 0.1 # Pressure in Pa
 temperature = 300 # Temperature in K
 [[Gas.species]]
 name = "N2"

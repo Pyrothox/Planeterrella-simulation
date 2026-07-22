@@ -9,5 +9,5 @@ class Experiment:
         self.simSettings = simulationSettings
         self.collisions = collisions
         self.MagneticField = fields.MagneticField(planeterrella)
-        self.ElectricField = fields.ElectricField(planeterrella, simulationSettings["voltage"])
+        self.ElectricField = fields.ElectricField(planeterrella, 1000) if self.simSettings["E_field"] else None
         self.debug = debug
