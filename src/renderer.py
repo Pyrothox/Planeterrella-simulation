@@ -5,6 +5,12 @@ import pyvista as pv
 import numpy as np
 # Render the geometry of the experiment
 
+_COLOR_N2_ELASTIC   = np.array([ 40,  60, 200], dtype=np.uint8) # color = blue
+_COLOR_N2_INELASTIC = np.array([200,  60,  40], dtype=np.uint8) # color = red
+_COLOR_O2_ELASTIC   = np.array([100, 140, 255], dtype=np.uint8) # color = light blue
+_COLOR_O2_INELASTIC = np.array([255, 140, 100], dtype=np.uint8) # color = light red
+
+
 class Renderer:
     def __init__(self, experiment: Experiment):
         self.plotter = pv.Plotter()
@@ -45,8 +51,6 @@ class Renderer:
                                     radius=0.01, height=geo.anode.lc + geo.anode.lb)
         plotter.add_mesh(anode_mesh, color='silver')
 
-
-
     def render_lines(self, data : np.ndarray):
         # go from (Nstep, Nelec, 3) to (Nelec, Nstep, 3)
         trajectories = np.transpose(data, (1, 0, 2))
@@ -59,6 +63,32 @@ class Renderer:
             electron_points = trajectories[i]
             raw_segments = pv.lines_from_points(electron_points)
             plotter.add_mesh(raw_segments, color='red', line_width=1)
+
+    def render_collisions(self, collision_data, point_size: float = 2.0, max_points: int = 100_000):
+        collision_data = np.asarray(collision_data)
+        n = collision_data.shape[0]
+        if n == 0:
+            print("No collisions to render.")
+            return
+
+        if max_points is not None and n > max_points:
+            indices = np.random.choice(n, max_points, replace=False)
+            collision_data = collision_data[indices]
+            print(f"Rendering {max_points} random collisions out of {n} total collisions.")
+        points = collision_data["position"]
+
+        lut = np.array([
+            [_COLOR_O2_ELASTIC,  _COLOR_O2_INELASTIC],  # specie = False (O2)
+            [_COLOR_N2_ELASTIC,  _COLOR_N2_INELASTIC],  # specie = True  (N2)
+        ], dtype=np.uint8)
+        colors = lut[collision_data["specie"].astype(np.uint8),
+                     collision_data["inelastic"].astype(np.uint8)]
+        
+        cloud = pv.PolyData(points)
+        cloud["colors"] = colors
+        self.plotter.add_points(cloud, scalars="colors", rgb=True, point_size=point_size, lighting=False)
+        self.plotter.update()  # Update the plotter to reflect the new points
+
 
 
 ### standalone function to render the B field lines, can be used without creating a Renderer object

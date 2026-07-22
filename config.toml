@@ -6,21 +6,21 @@ mode = 3   # Mode of the planeterrella :
 # 2 = Two spheres, the smaller one ejecting the particles
 # 3 = Two spheres, the larger one ejecting the particles
 
-collisions = true   #enable collisions
+collisions = true  #enable collisions
 
 [Debug]
-Plot_B_field = true # if true, will plot the B field lines instead, no simulation. 
+Plot_B_field = false # if true, will plot the B field lines instead, no simulation. 
 
 
 
 
 [Simulation]
-Nparticles = 5
-Nsteps = 100
+Nparticles = 500
+Nsteps = 10000
 voltage = 40 # Voltage in Volts
 
 [Gas]
-pressure = 2.5 # Pressure in Pa
+pressure = 0.25 # Pressure in Pa
 temperature = 300 # Temperature in K
 [[Gas.species]]
 name = "N2"

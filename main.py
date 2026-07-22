@@ -28,9 +28,10 @@ def main():
         diagnostics.save_to_hdf5(f)
     
     print(f"Diagnostics data saved to {name}. Rendering trajectories...")
-    
     trajectories = diagnostics.trajectoryRecorder.trajectories
     renderer.render_lines(trajectories)
+    collision_data = diagnostics.collisionRecorder.collisions[:diagnostics.collisionRecorder.ncollisions] if diagnostics.collisionRecorder else None
+    renderer.render_collisions(collision_data, point_size = 5.0)
     print("Rendering completed. Locking the renderer to keep the window open. \n Close the window to exit the program before running a new simulation.")
     renderer.lock()
 

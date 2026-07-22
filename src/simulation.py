@@ -46,9 +46,11 @@ class Simulation:
             for step in range(self.Nsteps):
 
                 if step !=0 : BorisPusher(electrons, self.experiment.MagneticField)       #updating the positions and velocities of electrons using the Boris algorithm
-                #if step % (self.Nsteps // 10) == 0:
-                if False:
-                    collisionEngine.collide(electrons, diags, debug=True)  # Perform collisions every 10% of the total steps with debug information
+                if step % (self.Nsteps // 10) == 0:
+                #if False:
+                    collisionEngine.collide(electrons, diags, debug=True)
+                    print("JAAAJ")  # Perform collisions every 10% of the total steps with debug information
+                    print(f"Step {step}: dt = {electrons.dt[0]:.2e}, alive electrons: {electrons.alive.sum()}")
                 else:
                     collisionEngine.collide(electrons, diags)       
 
@@ -61,4 +63,7 @@ class Simulation:
                 
 
                 progress.update(task, advance=1)
+            print("alive electrons: ", electrons.alive.sum())
+            print("Total travel distance: ", electrons.total_travel_distance.sum())
+            print("Cumulative time: ", electrons.cumdt.sum())
         return diags

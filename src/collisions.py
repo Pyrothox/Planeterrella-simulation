@@ -84,14 +84,16 @@ class CollisionEngine:
         
         collided = self.rng.random(n) < P_coll
         if not np.any(collided):
+            if debug:
+                print("No collisions occurred in this step.")
             return  # No collisions occurred
         
         idx = np.flatnonzero(collided)
         is_N2 = self.rng.random(idx.size) <= nu_N2[idx] / nu_tot[idx]        #collided with N2
         
         new_velocities = v.copy()  # Work on the full alive slice so absolute indices remain valid
-        self._resolveSpecie(idx[is_N2], v, pos, Ec, new_velocities, nu_N2_el, nu_N2, Qex_N2, Qex_N2p, loss_n2, loss_n2p, "N2", diagnostics = diagnostics)        #processing collisions with N2
-        self._resolveSpecie(idx[~is_N2], v, pos, Ec, new_velocities, nu_O2_el, nu_O2, Qex_O2, Qex_O2p, loss_o2, loss_o2p, "O2", diagnostics = diagnostics)      #processing collisions with O2
+        self._resolveSpecie(idx[is_N2], v, pos, eV, new_velocities, nu_N2_el, nu_N2, Qex_N2, Qex_N2p, loss_n2, loss_n2p, "N2", diagnostics = diagnostics)        #processing collisions with N2
+        self._resolveSpecie(idx[~is_N2], v, pos, eV, new_velocities, nu_O2_el, nu_O2, Qex_O2, Qex_O2p, loss_o2, loss_o2p, "O2", diagnostics = diagnostics)      #processing collisions with O2
 
         electrons.velocity[alive] = new_velocities  # Update the velocities of collided electrons
 
@@ -126,7 +128,39 @@ class CollisionEngine:
         channel_idx = np.where(totals > 0, channel_idx, -1)  # Set to -1 for particles with no available channels
         return channel_idx
 
-    def _resolveSpecie(self, idx, vel, pos, Ec, new_vel, nu_el, nu_species, Q_ex, Q_ex_p, loss, loss_p, specie, diagnostics : Diagnostics = None):
+    def _resolveSpecie(self, idx, vel, pos, eV, new_vel, nu_el, nu_species, Q_ex, Q_ex_p, loss, loss_p, specie, diagnostics : Diagnostics = None):
+        """
+        Determine whether each electron in idx undergoes an elastic or inelastic collision and update its velocity accordingly.
+        
+        Inputs
+        ----------
+        idx : (n,) ndarray
+            Indices of electrons that have collided with the specified specie.
+        vel : (n, 3) ndarray
+            Velocities of the electrons.
+        pos : (n, 3) ndarray
+            Positions of the electrons.
+        eV : (n,) ndarray
+            Energies of the electrons in eV.
+        new_vel : (n, 3) ndarray
+            Array to store the updated velocities of the electrons.
+        nu_el : (n,) ndarray
+            Elastic collision frequencies for each electron.
+        nu_species : (n,) ndarray
+            Total collision frequencies for each electron.
+        Q_ex : (m, n) ndarray
+            Excitation cross-sections for each channel and electron.
+        Q_ex_p : (m, n) ndarray
+            Excitation cross-sections for the product channels.
+        loss : (m,) ndarray
+            Energy losses for each excitation channel.
+        loss_p : (m,) ndarray
+            Energy losses for the product excitation channels.
+        specie : str
+            The specie with which the electrons have collided.
+        diagnostics : Diagnostics, optional
+            Diagnostic object to record collision events.
+        """
         if idx.size == 0:
             return 
         specieBool = True if specie == "N2" else False
@@ -149,9 +183,9 @@ class CollisionEngine:
             valid = channel_idx >= 0 #filter out invalid collisions with channel = -1
             valid_inel_idx = inel_idx[valid]      
             if valid_inel_idx.size > 0:
-                loss = losses[channel_idx[valid]]
+                loss_ev = losses[channel_idx[valid]]  # loss values are in eV
                 new_dir = self._rotate_isotropic_dir(valid_inel_idx.size, self.rng)
-                new_E = np.maximum((Ec[valid_inel_idx] - loss) * _E_CHARGE, 0)  # Ensure non-negative energy
+                new_E = np.maximum( (eV[valid_inel_idx] - loss_ev) * _E_CHARGE, 0.0)  # Ensure non-negative energy, in eV
                 new_speed = np.sqrt(2 * new_E / _ME)
                 new_vel[valid_inel_idx] = new_dir * new_speed[:, None]
                 if diagnostics is not None:

@@ -29,6 +29,6 @@ class Electrons(Particles):
         super().__init__(initial_positions, initial_velocities)
 
         self.dt = np.full(N, dt)  # Initialize dtarray with the same dt for all electrons
-    
-    
+        self.cumdt = np.zeros(N)  # Initialize cumulative time array with zeros for all electrons
+        self.total_travel_distance = np.zeros(N)  # Initialize total travel distance array with zeros for all electrons
     
