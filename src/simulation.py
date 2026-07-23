@@ -56,7 +56,7 @@ class Simulation:
                     collisionEngine.collide(electrons, diags)       
 
                 if step % 5 == 0:
-                    electrons.alive = self.experiment.planeterrella.Out_of_Bounds(electrons.position)       #electrons absoprtion check
+                    electrons.alive[electrons.alive] &= self.experiment.planeterrella.Out_of_Bounds(electrons.position[electrons.alive])       #electrons absoprtion check
                     if electrons.alive.sum() == 0:
                         print(f"All electrons are out of bounds at step {step}. Ending simulation.")
                         break

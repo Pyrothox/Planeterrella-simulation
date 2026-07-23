@@ -63,7 +63,7 @@ def BorisPusher(electrons:Electrons, magnetic_field : MagneticField, ElectricFie
     x_new = pos + v_new * dt  # update position
 
     electrons.position[alive] = x_new
-    electrons.velocity[alive] = v_plus
+    electrons.velocity[alive] = v_new
 
     electrons.total_travel_distance[alive] += np.linalg.norm(v_plus * dt, axis=1)  # Update total travel distance
     electrons.cumdt[alive] += dt  # Update cumulative time for alive electrons
