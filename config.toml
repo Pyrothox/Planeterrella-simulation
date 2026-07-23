@@ -17,8 +17,9 @@ Plot_E_field = false # if true, will plot the E field lines instead, no simulati
 [Simulation]
 Nparticles = 500
 Nsteps = 10000
-voltage = 40 # Voltage in Volts
-E_field = false
+voltage = 200 # Voltage in Volts
+emission_eV = 2.5 # energy of the electrons at step 0, increases with E field if enabled
+E_field = true
 
 [Gas]
 pressure = 0.1 # Pressure in Pa

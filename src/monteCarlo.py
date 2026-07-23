@@ -4,16 +4,19 @@ import numpy as np
 from scipy.spatial.transform import Rotation as R
 from src.geometry import Needle, Sphere
 
-def MonteCarloNeedle(needle: Needle, V:float):
+_EV_TO_JOULE = 1.602176634e-19   # elementary charge, C
+_ME = 9.1093837015e-31  # electron mass, kg
+
+def MonteCarloNeedle(needle: Needle, emission_eV:float):
     """
     Gives a random inital velocity V and position X to the electron ejected from the cone of the needle.
 
     Parameters
     ----------
     needle : Needle
-    V : float
-        The voltage applied between the 2 electrodes. Set the speed of the electron. 
-    
+    emission_eV : float
+        The energy of the electrons at emission, in electron volts.
+
     Returns
     -------
     global_pos : np.ndarray
@@ -36,9 +39,7 @@ def MonteCarloNeedle(needle: Needle, V:float):
 
 
     #initial velocity
-    e = 1.602176634e-19   # elementary charge, C
-    me = 9.1093837015e-31  # electron mass, kg
-    v = np.sqrt(2*e*V/me)  # speed of the electron in m/s
+    v = np.sqrt(2*_EV_TO_JOULE*emission_eV/_ME)  # speed of the electron in m/s
 
     psi = theta + np.pi/2 * uniform(-1, 1)
     phi = np.pi*uniform(0, 1) - np.arctan(r/lb)
@@ -67,15 +68,15 @@ def MonteCarloNeedle(needle: Needle, V:float):
 
 
 
-def MonteCarloSphere(sphere: Sphere, V: float):
+def MonteCarloSphere(sphere: Sphere, emission_eV: float):
     """
     Gives a random initial velocity V and position X to the electron ejected from the surface of the sphere.
 
     Parameters
     ----------
     sphere : Sphere
-    V : float
-        The voltage applied between the 2 electrodes. Set the speed of the electron.
+    emission_eV : float
+        The energy of the electrons at emission, in electron volts.
 
     Returns
     -------
@@ -99,7 +100,7 @@ def MonteCarloSphere(sphere: Sphere, V: float):
     #velocity
     e = 1.602176634e-19   # elementary charge, C
     me = 9.1093837015e-31  # electron mass, kg
-    v = np.sqrt(2*e*V/me)  # speed of the electron in m/s  
+    v = np.sqrt(2*_EV_TO_JOULE*emission_eV/_ME)  # speed of the electron in m/s
 
     # sample direction in a hemisphere around local z, then rotate to align with outward normal
     n = local_pos / r

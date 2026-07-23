@@ -23,11 +23,11 @@ class Simulation:
 
         # creating required objects for the simulation
         N = self.Nparticles
-        V = self.experiment.simSettings["voltage"]
+        emission_eV = self.experiment.simSettings["emission_eV"]  #initial electron energy
         cathode = self.experiment.planeterrella.cathode
         dt = 1e-7/N;    # initial time step before adaptive step size computation
         
-        electrons = Electrons(N, cathode, dt, V)
+        electrons = Electrons(N, cathode, dt, emission_eV)
         diags = Diagnostics(electrons, collisionsEnabled=self.experiment.collisions)  # Initialize diagnostics with collision recording if enabled
         if self.experiment.collisions:
             collisionEngine = CollisionEngine(self.experiment.gas)
