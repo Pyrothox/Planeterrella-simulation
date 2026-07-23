@@ -43,43 +43,39 @@ class Planeterrella:
         if isinstance(cathode, Sphere):
             dipoles.append(Dipole(cathode))
         return dipoles
-    
 
-    def OutofBounds(self, positions: np.ndarray) -> np.ndarray:
+    def Out_of_Bounds(self, positions: np.ndarray) -> np.ndarray:
         """
-        Check if a particle at the given position is out of bounds of the Planeterrella.
-        """
-        counter = 0
-        alive = np.ones(positions.shape[0], dtype=bool)
-        for i, pos in enumerate(positions):
-            if pos[2] < 0 or pos[1]**2 + pos[0]**2 > self.dome.radius**2 or pos[2] > self.dome.height:
-                alive[i] = False
-                counter += 1
-        return alive
-            
-
-    def check_collision(self, position: np.ndarray) -> bool:
-        """
-        Check if a particle at the given position collides with any of the objects in the Planeterrella.
+        Check if particles at the given position are out of bounds of the Planeterrella.
+        --------
+        Inputs : 
+        positions : np.ndarray (N,3)
+            The position of the particle to check for collision.
+        --------
+        Returns :
+        np.ndarray (N,)
+            A boolean array indicating whether each particle collides with any of the objects in the Planeterrella.
         """
         # Check collision with cathode
+        alive = np.ones(positions.shape[0], dtype=bool)
         if isinstance(self.cathode, Sphere):
-            if np.linalg.norm(position - self.cathode.position) <= self.cathode.radius:
-                return True
+            distances = np.linalg.norm(positions - self.cathode.position, axis=1)
+            alive[distances <= self.cathode.radius] = False
         elif isinstance(self.cathode, Needle):
             # Implement needle collision logic if needed
             pass
 
         # Check collision with anode
         if isinstance(self.anode, Sphere):
-            if np.linalg.norm(position - self.anode.position) <= self.anode.radius:
-                return True
+            distances = np.linalg.norm(positions - self.anode.position, axis=1)
+            alive[distances <= self.anode.radius] = False
         elif isinstance(self.anode, Needle):
             # Implement needle collision logic if needed
             pass
 
         # Check collision with dome
-        if np.linalg.norm(position) >= self.dome.radius:
-            return True
+        alive[positions[:,0]**2 + positions[:,1]**2 > self.dome.radius**2] = False
+        alive[positions[:,2] > self.dome.height] = False
+        alive[positions[:,2] < 0] = False
 
-        return False
+        return alive
