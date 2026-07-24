@@ -3,10 +3,11 @@ import numpy as np
 # Geometry of the Planeterrella
 
 class Sphere:
-    def __init__(self, radius, position, direction_vector):
+    def __init__(self, radius, position, direction_vector, dipole_moment):
         self.position = np.array(position)
         self.radius = radius
         self.direction_vector = np.array(direction_vector)
+        self.dipole_moment = dipole_moment
 
 
 class Needle:
@@ -24,10 +25,10 @@ class Dome:
         self.height = height
 
 class Dipole:
-    def __init__(self, shere : Sphere):
-        self.position = shere.position
-        self.direction = shere.direction_vector
-        self.moment = 250 #A/m2
+    def __init__(self, sphere: Sphere):
+        self.position = sphere.position
+        self.direction = sphere.direction_vector
+        self.moment = sphere.dipole_moment
 
 class Planeterrella:
     def __init__(self, cathode: Sphere | Needle, anode: Sphere | Needle, dome: Dome):

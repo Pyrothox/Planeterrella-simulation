@@ -59,6 +59,7 @@ class Simulation:
                     electrons.alive[electrons.alive] &= self.experiment.planeterrella.Out_of_Bounds(electrons.position[electrons.alive])       #electrons absoprtion check
                     if electrons.alive.sum() == 0:
                         print(f"All electrons are out of bounds at step {step}. Ending simulation.")
+                        progress.update(task, advance=self.Nsteps - step)  # Update progress bar to complete
                         break
                     diags.recordStep(step * dt) # record diagnostics every 25 steps
                 

@@ -80,17 +80,18 @@ class Renderer:
             collision_data = collision_data[indices]
             print(f"Rendering {max_points} random collisions out of {n} total collisions.")
         points = collision_data["position"]
-
-        lut = np.array([
-            [_COLOR_O2_ELASTIC,  _COLOR_O2_INELASTIC],  # specie = False (O2)
-            [_COLOR_N2_ELASTIC,  _COLOR_N2_INELASTIC],  # specie = True  (N2)
-        ], dtype=np.uint8)
-        colors = lut[collision_data["specie"].astype(np.uint8),
-                     collision_data["inelastic"].astype(np.uint8)]
+        colors_uint = collision_data["color"]
+        rgba_matrix = np.ascontiguousarray(colors_uint).view(np.uint8).reshape(-1, 4)[:, ::-1]  # reverse needed because of RAM storage order
+        # lut = np.array([
+        #     [_COLOR_O2_ELASTIC,  _COLOR_O2_INELASTIC],  # specie = False (O2)
+        #     [_COLOR_N2_ELASTIC,  _COLOR_N2_INELASTIC],  # specie = True  (N2)
+        # ], dtype=np.uint8)
+        # colors = lut[collision_data["specie"].astype(np.uint8),
+        #              collision_data["inelastic"].astype(np.uint8)]
         
         cloud = pv.PolyData(points)
-        cloud["colors"] = colors
-        self.plotter.add_points(cloud, scalars="colors", rgb=True, point_size=point_size, lighting=False)
+        cloud["colors"] = rgba_matrix  
+        self.plotter.add_points(cloud, scalars="colors", rgba=True, point_size=point_size, lighting=False)
         self.plotter.update()  # Update the plotter to reflect the new points
 
 

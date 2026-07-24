@@ -50,7 +50,8 @@ def load_experiment(file_path):
         anode = Sphere(
             radius=d["SmallSphere"]["R"],
             position=np.array(d["SmallSphere"]["position"]),
-            direction_vector=np.array(d["SmallSphere"]["direction"])
+            direction_vector=np.array(d["SmallSphere"]["direction"]),
+            dipole_moment = d["SmallSphere"]["dipole_moment"]
         )
     elif mode == 1:     # needs 3 objects  : not handled yet
         print("please don't")
@@ -58,23 +59,27 @@ def load_experiment(file_path):
         cathode = Sphere(
             radius=d["SmallSphere"]["R"],
             position=np.array(d["SmallSphere"]["position"]),
-            direction_vector=np.array(d["SmallSphere"]["direction"])
+            direction_vector=np.array(d["SmallSphere"]["direction"]),
+            dipole_moment = d["SmallSphere"]["dipole_moment"]
         )
         anode = Sphere(
             radius=d["LargeSphere"]["R"],
             position=np.array(d["LargeSphere"]["position"]),
-            direction_vector=np.array(d["LargeSphere"]["direction"])
+            direction_vector=np.array(d["LargeSphere"]["direction"]),
+            dipole_moment = d["LargeSphere"]["dipole_moment"]
         )
     elif mode == 3:     # large sphere shoots e- (cathode) and small sphere receives (anode) : auroral observations 
         cathode = Sphere(
             radius=d["LargeSphere"]["R"],
             position=np.array(d["LargeSphere"]["position"]),
-            direction_vector=np.array(d["LargeSphere"]["direction"])
+            direction_vector=np.array(d["LargeSphere"]["direction"]),
+            dipole_moment = d["LargeSphere"]["dipole_moment"]
         )
         anode = Sphere(
             radius=d["SmallSphere"]["R"],
             position=np.array(d["SmallSphere"]["position"]),
-            direction_vector=np.array(d["SmallSphere"]["direction"])
+            direction_vector=np.array(d["SmallSphere"]["direction"]),
+            dipole_moment = d["SmallSphere"]["dipole_moment"]
         )
 
     simulation_settings = d["Simulation"]

@@ -65,8 +65,8 @@ class CollisionEngine:
         nO2 = self.nO2
 
         # ineslatic cross sections and energy loss
-        Qex_N2, Qex_N2p, Qex_N2i, loss_n2, loss_n2p, loss_n2i = cross_section_inelastic_N2(eV)
-        Qex_O2, Qex_O2p, Qex_O2c, loss_o2, loss_o2p, loss_o2c = cross_section_inelastic_O2(eV)
+        Qex_N2, Qex_N2p, Qex_N2i, loss_n2, loss_n2p, loss_n2i, col_n2, col_n2p, col_n2i = cross_section_inelastic_N2(eV)
+        Qex_O2, Qex_O2p, Qex_O2c, loss_o2, loss_o2p, loss_o2c, col_o2, col_o2p, col_o2c = cross_section_inelastic_O2(eV)
 
         #elastic cross sections
         S_N2, S_O2 = cross_section_elastic(eV)
@@ -92,8 +92,8 @@ class CollisionEngine:
         is_N2 = self.rng.random(idx.size) <= nu_N2[idx] / nu_tot[idx]        #collided with N2
         
         new_velocities = v.copy()  # Work on the full alive slice so absolute indices remain valid
-        self._resolveSpecie(idx[is_N2], v, pos, eV, new_velocities, nu_N2_el, nu_N2, Qex_N2, Qex_N2p, loss_n2, loss_n2p, "N2", diagnostics = diagnostics)        #processing collisions with N2
-        self._resolveSpecie(idx[~is_N2], v, pos, eV, new_velocities, nu_O2_el, nu_O2, Qex_O2, Qex_O2p, loss_o2, loss_o2p, "O2", diagnostics = diagnostics)      #processing collisions with O2
+        self._resolveSpecie(idx[is_N2], v, pos, eV, new_velocities, nu_N2_el, nu_N2, Qex_N2, Qex_N2p, loss_n2, loss_n2p, col_n2, col_n2p, "N2", diagnostics = diagnostics)        #processing collisions with N2
+        self._resolveSpecie(idx[~is_N2], v, pos, eV, new_velocities, nu_O2_el, nu_O2, Qex_O2, Qex_O2p, loss_o2, loss_o2p, col_o2, col_o2p, "O2", diagnostics = diagnostics)      #processing collisions with O2
 
         electrons.velocity[alive] = new_velocities  # Update the velocities of collided electrons
 
@@ -128,7 +128,7 @@ class CollisionEngine:
         channel_idx = np.where(totals > 0, channel_idx, -1)  # Set to -1 for particles with no available channels
         return channel_idx
 
-    def _resolveSpecie(self, idx, vel, pos, eV, new_vel, nu_el, nu_species, Q_ex, Q_ex_p, loss, loss_p, specie, diagnostics : Diagnostics = None):
+    def _resolveSpecie(self, idx, vel, pos, eV, new_vel, nu_el, nu_species, Q_ex, Q_ex_p, loss, loss_p, col, col_p, specie, diagnostics : Diagnostics = None):
         """
         Determine whether each electron in idx undergoes an elastic or inelastic collision and update its velocity accordingly.
         
@@ -179,15 +179,16 @@ class CollisionEngine:
         if inel_idx.size > 0:
             weight = np.concatenate([Q_ex[:, inel_idx], Q_ex_p[:, inel_idx]], axis=0)
             losses = np.concatenate([loss, loss_p], axis=0)
+            colors = np.concatenate([col, col_p], axis=0)
             channel_idx = self._sampleChannel(weight, self.rng) 
             valid = channel_idx >= 0 #filter out invalid collisions with channel = -1
             valid_inel_idx = inel_idx[valid]      
             if valid_inel_idx.size > 0:
                 loss_ev = losses[channel_idx[valid]]  # loss values are in eV
+                colors_map = colors[channel_idx[valid]]  # attributed colors for the inelastic collisions
                 new_dir = self._rotate_isotropic_dir(valid_inel_idx.size, self.rng)
                 new_E = np.maximum( (eV[valid_inel_idx] - loss_ev) * _E_CHARGE, 0.0)  # Ensure non-negative energy, in eV
                 new_speed = np.sqrt(2 * new_E / _ME)
                 new_vel[valid_inel_idx] = new_dir * new_speed[:, None]
                 if diagnostics is not None:
-                    
-                    [diagnostics.recordCollision(pos[valid_inel_idx[i]], True, specieBool) for i in range(valid_inel_idx.size)]  # Record inelastic collision events
+                    [diagnostics.recordCollision(pos[valid_inel_idx[i]], True, specieBool, colors_map[i]) for i in range(valid_inel_idx.size)]  # Record inelastic collision events

@@ -32,13 +32,14 @@ class CollisionRecorder:
         ("position", np.float32, (3,)),  # Position of the electron at the time of collision
         ("inelastic", np.bool_),  # Whether the collision was inelastic
         ("specie", np.bool_),  # True for N2, False for O2
+        ("color", np.uint32)  # color from hex to uint32
     ])
     def __init__(self, size = 10_000_000):
         self.collisions = np.empty(size, dtype=self.collision_dtype)
         self.ncollisions = 0  # Counter for the number of recorded collisions
 
-    def record(self, pos, inelastic, specie):
-        self.collisions[self.ncollisions] = (pos, inelastic, specie)
+    def record(self, pos, inelastic, specie, color = 0):
+        self.collisions[self.ncollisions] = (pos, inelastic, specie, np.uint32(color))
         self.ncollisions += 1
 
     def save(self, g : h5py.Group):
@@ -55,8 +56,8 @@ class Diagnostics:
         self.time.append(time)
         self.trajectoryRecorder.record()  # Record the positions of electrons at this time step
 
-    def recordCollision(self, pos, inelastic, specie):
-        self.collisionRecorder.record(pos, inelastic, specie)
+    def recordCollision(self, pos, inelastic, specie, color: np.uint32 = 0):
+        self.collisionRecorder.record(pos, inelastic, specie, color)
 
     def save_to_hdf5(self, f: h5py.File):
         
