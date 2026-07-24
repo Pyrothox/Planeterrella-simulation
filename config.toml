@@ -6,20 +6,24 @@ mode = 3   # Mode of the planeterrella :
 # 2 = Two spheres, the smaller one ejecting the particles
 # 3 = Two spheres, the larger one ejecting the particles
 
-collisions = true  #enable collisions
+collisions = true  # enable collisions between electrons and gas molecules.
 
 [Debug]
 Plot_B_field = false # if true, will plot the B field lines instead, no simulation. 
 Plot_E_field = false # if true, will plot the E field lines instead, no simulation.
 
+[Diagnostics]
+trajectoryStep = 10 # number of steps between each trajectory diagnostics recording
 
 
 [Simulation]
-Nparticles = 500
-Nsteps = 10000
-voltage = 200 # Voltage in Volts
+Nparticles = 500      # number of electros in the sim at step 0
+Nsteps = 10000          # number of steps in the simulation
+dt_ratio = 0.25     # dt = ratio_dt * cyclotron_T : dt is set to be a fraction of the electrons cyclotron period to capture the full physics. 
+voltage = 200 # Voltage in Volts between the electrodes
 emission_eV = 2.5 # energy of the electrons at step 0, increases with E field if enabled
-E_field = true
+E_field = true      # enable or disable E field from the electrodes
+
 
 [Gas]
 pressure = 0.1 # Pressure in Pa
@@ -34,13 +38,13 @@ fraction = 0.2
 [SmallSphere]
 R = 0.05    # Radius of the small sphere in meters
 position = [0, 0.12, 0.2]   # Position of the small sphere in meters (x, y, z)
-direction = [0, 0, 1]   # Direction of the small sphere in meters (x, y, z)
+direction = [0, 0, 1]   # Direction vector of the small sphere (x, y, z)
 dipole_moment = 250   # Dipole moment of the small sphere in A*m^2
 
 [LargeSphere]
 R = 0.1     # Radius of the large sphere in meters
 position = [0, -0.1, 0.2]   # Position of the large sphere in meters (x, y, z)
-direction = [0, 0.34202014332, 0.93969262078]   # Direction of the large sphere in meters (x, y, z)
+direction = [0, 0.34202014332, 0.93969262078]   # Direction vector of the large sphere (x, y, z)
 dipole_moment = 250   # Dipole moment of the large sphere in A*m^2
 
 [Needle]
@@ -48,7 +52,7 @@ position = [0, 0, 0]   # Position of the needle in meters (x, y, z)
 lc = 0.2    # Length of the cylinder part in meters
 lb = 0.2   # Length of the conical part in meters
 r = 0.005   # Radius of the needle in meters (the cylinder part)
-direction = [0, 0, 1]   # Direction of the needle in meters (x, y, z)
+direction = [0, 0, 1]   # Direction vector of the needle (x, y, z)
 
 [Dome]
 D = 0.5     # Diameter of the dome in meters

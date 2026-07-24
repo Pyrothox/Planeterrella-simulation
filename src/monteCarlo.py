@@ -7,6 +7,9 @@ from src.geometry import Needle, Sphere
 _EV_TO_JOULE = 1.602176634e-19   # elementary charge, C
 _ME = 9.1093837015e-31  # electron mass, kg
 
+
+#TODO : these methods generate electrons randomly at the surface of the electrodes, but the electric field should be considered, more electrons are generating between the electrodes. 
+
 def MonteCarloNeedle(needle: Needle, emission_eV:float):
     """
     Gives a random inital velocity V and position X to the electron ejected from the cone of the needle.

@@ -6,7 +6,7 @@ dist/
 wheels/
 *.egg-info
 *.h5
-
+*.ipynb
 # Virtual environments
 .venv
 

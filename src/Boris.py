@@ -10,6 +10,7 @@ def cyclotron_dt(electrons:Electrons, magnetic_field: MagneticField) -> float:
     """
     Calculate the cyclotron time step for electrons in a magnetic field.
     """
+    # computing only for alive electrons
     alive = electrons.alive
     pos = electrons.position[alive]
 
@@ -23,18 +24,18 @@ def cyclotron_dt(electrons:Electrons, magnetic_field: MagneticField) -> float:
     # Cyclotron period
     T_c = 2 * np.pi / omega_c
 
-    # Return the minimum cyclotron period as the time step
+    # Return the minimum cyclotron period to ensure stability for all electrons
     return np.min(T_c)
 
-def BorisPusher(electrons:Electrons, magnetic_field : MagneticField, ElectricField : ElectricField):
+def BorisPusher(electrons:Electrons, magnetic_field : MagneticField, ElectricField : ElectricField, dt_ratio: float = 0.25):
     """
-    Update the positions and velocities of electrons using the Boris algorithm.
+    Update the positions and velocities of electrons using the Boris pusher algorithm.
     """
     
     alive = electrons.alive
     if alive.sum() == 0:
         return  # No alive electrons to update
-    dt = 0.25*cyclotron_dt(electrons, magnetic_field)  # Calculate the cyclotron time step
+    dt = dt_ratio * cyclotron_dt(electrons, magnetic_field)  # Calculate time step from cyclotron frequency
     electrons.dt[alive] = dt  # Update the time step for alive electrons #TODO : each electron could get its own dt ?
     pos = electrons.position[alive]
     vel = electrons.velocity[alive]

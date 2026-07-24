@@ -3,6 +3,7 @@ from src import geometry
 from src import fields
 
 class Experiment:
+    # This class encapsulates the entire experimental setup, including geometry, gas properties, simulation settings, and fields.
     def __init__(self, planeterrella: geometry.Planeterrella, gas: gas.Gas, simulationSettings : dict, collisions : bool, debug = False):
         self.planeterrella = planeterrella
         self.gas = gas

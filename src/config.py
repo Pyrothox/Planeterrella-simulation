@@ -7,10 +7,22 @@ from src.experiment import Experiment
 
 
 def load_experiment(file_path):
+    """Load experiment parameters from a TOML file.
+    
+    Parameters
+    --------
+    file_path : str
+        Path to the TOML configuration file.
+
+    Returns
+    -------
+    Experiment
+        An Experiment object containing the loaded parameters.
+    """
     with open(file_path, "rb") as f:
         d = tomllib.load(f)
     
-    collisions = d["collisions"]
+    collisions = d["collisions"]    # bool, are the collisions enabled or not ?
 
     # Read gas parameters
     gas_params = d["Gas"]
@@ -27,7 +39,6 @@ def load_experiment(file_path):
     )
 
     # Read geometry parameters
-    
     mode = d["mode"]
     # 0 = The buse and one sphere : buse shooting electrons
     # 1 = The buse and two spheres
@@ -82,12 +93,12 @@ def load_experiment(file_path):
             dipole_moment = d["SmallSphere"]["dipole_moment"]
         )
 
-    simulation_settings = d["Simulation"]
+    simulation_settings = d["Simulation"]   # settings to transfer to simulation.py
 
-    planeterrella = Planeterrella(cathode = cathode, anode=anode, dome=dome)
+    planeterrella = Planeterrella(cathode = cathode, anode=anode, dome=dome)        # physical setup of the experiment
     experiment = Experiment(planeterrella=planeterrella, gas=gas, simulationSettings=simulation_settings, collisions = collisions)
 
-    # Checking if a special debug mod is enabled : 
+    # Checking if a special debug mod is enabled, overriding the normal simulation
     if d["Debug"]["Plot_B_field"]:
         experiment.debug = "B_field"
     if d["Debug"]["Plot_E_field"]:

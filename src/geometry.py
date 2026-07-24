@@ -2,35 +2,8 @@ from __future__ import annotations
 import numpy as np
 # Geometry of the Planeterrella
 
-class Sphere:
-    def __init__(self, radius, position, direction_vector, dipole_moment):
-        self.position = np.array(position)
-        self.radius = radius
-        self.direction_vector = np.array(direction_vector)
-        self.dipole_moment = dipole_moment
-
-
-class Needle:
-    def __init__(self, position, lc, lb, r, direction_vector):
-        self.position = np.array(position)
-        self.lc = lc
-        self.lb = lb
-        self.r = r
-        self.direction_vector = np.array(direction_vector)
-
-
-class Dome:
-    def __init__(self, radius, height):
-        self.radius = radius
-        self.height = height
-
-class Dipole:
-    def __init__(self, sphere: Sphere):
-        self.position = sphere.position
-        self.direction = sphere.direction_vector
-        self.moment = sphere.dipole_moment
-
 class Planeterrella:
+    # the planeterrella physical setup. 
     def __init__(self, cathode: Sphere | Needle, anode: Sphere | Needle, dome: Dome):
         self.anode = anode
         self.cathode = cathode
@@ -38,6 +11,8 @@ class Planeterrella:
         self.dipoles = self.create_dipoles(self.anode, self.cathode)
 
     def create_dipoles(self, anode: Sphere | Needle, cathode: Sphere | Needle):
+        """Create dipoles from the spheres magnets, used for the magnetic field calculation."""
+        
         dipoles: list[Dipole] = []
         if isinstance(anode, Sphere):
             dipoles.append(Dipole(anode))
@@ -51,7 +26,7 @@ class Planeterrella:
         --------
         Inputs : 
         positions : np.ndarray (N,3)
-            The position of the particle to check for collision.
+            The positions of the particles to check for collision.
         --------
         Returns :
         np.ndarray (N,)
@@ -80,3 +55,36 @@ class Planeterrella:
         alive[positions[:,2] < 0] = False
 
         return alive
+
+class Sphere:
+    # Spherical electrode with a magnet inside. 
+    def __init__(self, radius, position, direction_vector, dipole_moment):
+        self.position = np.array(position)
+        self.radius = radius
+        self.direction_vector = np.array(direction_vector)
+        self.dipole_moment = dipole_moment      #aligned with the direction vector.
+
+
+class Needle:
+    # Needle electrode without magnet.
+    def __init__(self, position, lc, lb, r, direction_vector):
+        self.position = np.array(position)
+        self.lc = lc    # length of the cylinder part 
+        self.lb = lb    # length of the conical part
+        self.r = r 
+        self.direction_vector = np.array(direction_vector)
+
+
+class Dome:
+    # cylinder representing the vacuum chamber of the Planeterrella.
+    def __init__(self, radius, height):
+        self.radius = radius
+        self.height = height
+
+class Dipole:
+    # Dipole to compute magnetic field.
+    def __init__(self, sphere: Sphere):
+        self.position = sphere.position
+        self.direction = sphere.direction_vector
+        self.moment = sphere.dipole_moment
+

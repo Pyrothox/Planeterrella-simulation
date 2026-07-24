@@ -4,8 +4,10 @@ from src.geometry import Planeterrella, Sphere, Needle, Dome
 import pyvista as pv
 import numpy as np
 from IPython import get_ipython
-# Render the geometry of the experiment
 
+# Renders the geometry of the experiment
+
+# Base colors for the different type of collisions. 
 _COLOR_N2_ELASTIC   = np.array([ 40,  60, 200], dtype=np.uint8) # color = blue
 _COLOR_N2_INELASTIC = np.array([200,  60,  40], dtype=np.uint8) # color = red
 _COLOR_O2_ELASTIC   = np.array([100, 140, 255], dtype=np.uint8) # color = light blue
@@ -13,28 +15,30 @@ _COLOR_O2_INELASTIC = np.array([255, 140, 100], dtype=np.uint8) # color = light 
 
 
 class Renderer:
+    # creates a 3d rendering of the Planeterrella experiment using pyvista. Updated using class mthods. 
     def __init__(self, experiment: Experiment = None):
-        self.plotter = pv.Plotter()
+        self.plotter = pv.Plotter()     # pyvista plotter object 
         self.experiment = experiment
         self.plotter.set_background("black")
 
         if not (get_ipython() is not None):
-            self.plotter.show(interactive_update=True)   #letting python code run while the plotter is opened if not in a notebook environment
+            self.plotter.show(interactive_update=True)   # letting python code run while the plotter is opened if not in a notebook environment
 
     def lock(self):
+        """ Locks the plotter to prevent further updates. Otherwise the render automatically closes when the main() function is done."""
         self.plotter.show(interactive_update=False)     # if the interactive_update is set to True, the code will automatically close the windows when main() is done
 
     def render_empty(self):
+        """ Renders the geometry of the Planeterrella turned off."""
         geo = self.experiment.planeterrella
-        # Create a PyVista plotter
         plotter = self.plotter
 
 
         # Add the dome to the plotter
         dome_mesh = pv.Cylinder(center=[0, 0, geo.dome.height / 2], direction=[0, 0, 1], radius=geo.dome.radius, height=geo.dome.height)
-        plotter.add_mesh(dome_mesh, color='lightblue', opacity=0.5)
+        plotter.add_mesh(dome_mesh, color='lightblue', opacity=0.1, style='wireframe')
 
-        # Add the cathode and anode to the plotter
+        # Add the cathode to the plotter
         if isinstance(geo.cathode, Needle):
             cathode_mesh = pv.Cylinder(center=geo.cathode.position,
                                         direction=geo.cathode.direction_vector,
@@ -44,7 +48,7 @@ class Renderer:
                                     center=geo.cathode.position) 
         plotter.add_mesh(cathode_mesh, color='silver')
 
-
+        # add the anode to the plotter
         if isinstance(geo.anode, Sphere):
             anode_mesh = pv.Sphere(radius=geo.anode.radius,
                                 center=geo.anode.position)
@@ -55,12 +59,17 @@ class Renderer:
         plotter.add_mesh(anode_mesh, color='silver')
 
     def render_lines(self, data : np.ndarray, color='red'):
-        # go from (Nstep, Nelec, 3) to (Nelec, Nstep, 3)
+        """ Renders the trajectories of given particles data
+        Parameters
+        ----------
+        data : np.ndarray
+            Array of shape (Nstep, Nparticles, 3) containing the particle positions over time.
+        color : str, optional
+            Color of the trajectories, by default 'red'
+        """
+        # go from (Nstep, Nparticles, 3) to (Nparticles, Nstep, 3)
         trajectories = np.transpose(data, (1, 0, 2))
-        points = trajectories.reshape(-1, 3)  # Flatten the array to (Nelec*Nstep, 3)
-        lines =[]
         nElec = trajectories.shape[0]
-        nsteps = trajectories.shape[1]  
         plotter = self.plotter
         for i in range(nElec):
             electron_points = trajectories[i]
@@ -69,13 +78,23 @@ class Renderer:
         print("rendered")
 
     def render_collisions(self, collision_data, point_size: float = 2.0, max_points: int = 100_000):
+        """ Renders the collision events of the electrons.
+        Parameters
+        ----------
+        collision_data : np.ndarray
+            Array of shape (Ncollisions,) containing the collision events with fields: position, inelastic, specie, color.
+        point_size : float, optional
+            Size of the points representing collisions, by default 2.0
+        max_points : int, optional
+            Maximum number of collision points to render, by default 100_000. If the number of collisions exceeds this, a random subset will be rendered.
+        """
         collision_data = np.asarray(collision_data)
         n = collision_data.shape[0]
         if n == 0:
             print("No collisions to render.")
             return
 
-        if max_points is not None and n > max_points:
+        if max_points is not None and n > max_points:       # too many collisions to render, randomly select a subset
             indices = np.random.choice(n, max_points, replace=False)
             collision_data = collision_data[indices]
             print(f"Rendering {max_points} random collisions out of {n} total collisions.")
