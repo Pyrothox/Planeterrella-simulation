@@ -24,6 +24,7 @@ class Simulation:
 
         # creating required objects for the simulation
         N = self.Nparticles
+        diag_step = self.experiment.simSettings["trajectoryStep"]
         emission_eV = self.experiment.simSettings["emission_eV"]  #initial electron energy
         cathode = self.experiment.planeterrella.cathode
         dt = 1e-12/N;    # initial time step before adaptive step size computation
@@ -50,22 +51,21 @@ class Simulation:
                 BorisPusher(electrons, self.experiment.MagneticField, self.experiment.ElectricField)       #updating the positions and velocities of electrons using the Boris algorithm
                 electrons.alive[electrons.alive] &= self.experiment.planeterrella.Out_of_Bounds(electrons.position[electrons.alive])       #electrons absorption check
 
+                nb_alive = electrons.alive.sum()
+                if nb_alive == 0:
+                    print(f"All electrons are out of bounds at step {step}. Ending simulation.")
+                    progress.update(task, advance=self.Nsteps - step)  # Update progress bar to complete
+                    break
                 if step % (self.Nsteps // 10) == 0:
                 #if False:
                     collisionEngine.collide(electrons, diags, debug=True)
-                    print(f"Step {step}: dt = {electrons.dt[0]:.2e}, alive electrons: {electrons.alive.sum()}")
                 else:
                     collisionEngine.collide(electrons, diags)       
 
-                if step % 5 == 0:
-                    if electrons.alive.sum() == 0:
-                        print(f"All electrons are out of bounds at step {step}. Ending simulation.")
-                        progress.update(task, advance=self.Nsteps - step)  # Update progress bar to complete
-                        break
-                    diags.recordStep() # record diagnostics every 25 steps
-                
+                if step % diag_step == 0:
+                    diags.recordStep() # record diagnostics every trajectoryStep steps
 
-                progress.update(task, advance=1, alive= round(electrons.alive.sum()/N*100, 2))  # Update progress bar with alive percentage
+                progress.update(task, advance=1, alive= round(nb_alive/N*100, 2))  # Update progress bar with alive percentage
             print("average travel distance: ", electrons.total_travel_distance.sum() / N)
             print("Cumulative time: ", electrons.cumdt.sum())
             if self.experiment.collisions:

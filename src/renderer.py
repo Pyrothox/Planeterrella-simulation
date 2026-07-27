@@ -122,7 +122,7 @@ def _unit_field(F, positions):
     norm[norm < 1e-15] = 1e-15
     return  f / norm, np.linalg.norm(f, axis=1)
 
-def _trace_batch(F, seeds, spheres, step_size, max_steps, max_radius):
+def _trace_batch(F, seeds, spheres, step_size, max_steps, max_radius, sign):
     """ Trace lines using a simple Runge-Kutta 4th order integrator. Returns a list of points and field magnitudes for each seed point."""
     n = seeds.shape[0]
     pos = seeds.copy()
@@ -142,7 +142,7 @@ def _trace_batch(F, seeds, spheres, step_size, max_steps, max_radius):
         k2, _ = _unit_field(F, p + 0.5 * step_size * k1)
         k3, _ = _unit_field(F, p + 0.5 * step_size * k2)
         k4, _ = _unit_field(F, p + step_size * k3)
-        newp = p + (step_size / 6.0) * (k1 + 2 * k2 + 2 * k3 + k4)
+        newp = p + sign * (step_size / 6.0) * (k1 + 2 * k2 + 2 * k3 + k4)
         pos[idx] = newp
 
         stop = np.linalg.norm(newp, axis=1) > max_radius
@@ -209,11 +209,11 @@ def seed_points_uniform_sphere(sphere : Sphere, n_seeds=200, surface_offset=1.02
 
     return center + R * surface_offset * directions
 
-def trace_field_lines(F, spheres, seeds, step_size=0.002, max_steps=1500, max_radius=1.0):
+def trace_field_lines(F, spheres, seeds, step_size=0.002, max_steps=1500, max_radius=1.0, sign=1.0):
     """
     Trace magnetic field lines starting from specified colatitudes and azimuths around each sphere.
     """
-    pts, mag = _trace_batch(F, seeds, spheres, step_size, max_steps, max_radius)    
+    pts, mag = _trace_batch(F, seeds, spheres, step_size, max_steps, max_radius, sign)
     lines = []
     for i in range(seeds.shape[0]):
         full_points = [seeds[i]] + pts[i]
@@ -284,9 +284,9 @@ def render_E_field(experiment: Experiment):
     tube_radius=0.0015
     background="black"
 
-    
-    seeds = seed_points_uniform_sphere(spheres[1])
-    lines = trace_field_lines(E, spheres, seeds, step_size, max_steps, max_radius)
+    seeds = np.vstack([seed_points_uniform_sphere(s) for s in spheres])
+    lines = trace_field_lines(E, spheres, seeds, step_size, max_steps, max_radius, sign=-1.0)
+    lines += trace_field_lines(E, spheres, seeds, step_size, max_steps, max_radius, sign=1.0)
     plotter = pv.Plotter()
     plotter.background_color = background
 

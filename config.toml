@@ -12,21 +12,22 @@ collisions = true  # enable collisions between electrons and gas molecules.
 Plot_B_field = false # if true, will plot the B field lines instead, no simulation. 
 Plot_E_field = false # if true, will plot the E field lines instead, no simulation.
 
-[Diagnostics]
-trajectoryStep = 10 # number of steps between each trajectory diagnostics recording
+
 
 
 [Simulation]
 Nparticles = 500      # number of electros in the sim at step 0
 Nsteps = 10000          # number of steps in the simulation
+trajectoryStep = 10 # number of steps between each trajectory diagnostics recording
+
 dt_ratio = 0.25     # dt = ratio_dt * cyclotron_T : dt is set to be a fraction of the electrons cyclotron period to capture the full physics. 
-voltage = 200 # Voltage in Volts between the electrodes
+voltage = 300 # Voltage in Volts between the electrodes
 emission_eV = 2.5 # energy of the electrons at step 0, increases with E field if enabled
-E_field = true      # enable or disable E field from the electrodes
+E_field = 2      # 0: disable E field, 1: enable simple E field, 2: more precise E field
 
 
 [Gas]
-pressure = 0.1 # Pressure in Pa
+pressure = 5 # Pressure in Pa
 temperature = 300 # Temperature in K
 [[Gas.species]]
 name = "N2"
