@@ -1,5 +1,3 @@
-from turtle import position
-
 import numpy as np
 from src.geometry import Planeterrella, Needle, Sphere
 from src.monteCarlo import MonteCarloNeedle, MonteCarloSphere

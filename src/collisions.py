@@ -116,7 +116,58 @@ class CollisionEngine:
         unit_dir = np.stack([sintheta*np.cos(phi), sintheta*np.sin(phi), costheta], axis=1)
 
         return unit_dir
+    @staticmethod
+    def _sample_costheta_forward_peaked_scattering(eV, rng, E0, eV_min = 1e-3):
+        """
+        Samples cos(theta) from the screened-Rutherford differential cross
+        section via inverse-CDF sampling (closed form, derived analytically
+        from dsigma/dOmega ~ 1/(1-cos(theta)+2*delta)^2):
+        cos(theta) = 1 - 2*delta*(1-R) / (R + delta)
+        """
+        delta = E0/ np.maximum(eV, eV_min) #avoid dividing by 0
+        R = rng.random(eV.shape[0])
+        costheta = 1 - 2*delta*(1-R) / (R + delta)
+        return costheta
 
+    @staticmethod
+    def _scatter_direction(v_in, eV, rng, E0=10):
+        """
+        Creates a forward peaked (screened Rutherford) instead of isotropic scattering for elastic collisions.
+
+        Parameters
+        ----------
+        v_in : (N,3) ndarray
+            Initial velocity vector of the electrons.
+        eV : float
+            Energy of the electron in eV.
+        rng : np.random.Generator
+            Random number generator for generating random angles.
+        E0 : float, optional
+            E0 is a characteristic energy (eV) controlling how fast the beam narrows with energy
+        Returns
+        -------
+        (N,3) ndarray
+            unit vectors of the scattered direction.
+        """
+        n= v_in.shape[0]
+        V_norm = np.linalg.norm(v_in, axis=1)
+        e_z = v_in / V_norm[:, None]  # Normalize the input velocity vectors, unit vector in z direction
+
+        costheta = CollisionEngine._sample_costheta_forward_peaked_scattering(eV, rng, E0, eV_min=1e-3)
+        sintheta = np.sqrt(1 - costheta**2)
+        phi = rng.uniform(0, 2*np.pi, n)  # Random azimuthal angle for each electron
+        #creating orthogal basis for each electron
+        reference = np.tile(np.array([0, 0, 1]), (n, 1))  # arbitrary reference vector
+        # Check for parallel vectors and choose a different reference if necessary
+        parallel_mask = np.isclose(np.abs(np.einsum('ij,ij->i', e_z, reference)), 1.0)
+        reference[parallel_mask] = np.array([1, 0, 0])
+
+        e_x = np.cross(reference, e_z)
+        e_x /= np.linalg.norm(e_x, axis=1)[:, None]  # Normalize e_x
+        e_y = np.cross(e_z, e_x)  # e_y is automatically normalized
+
+        new_dir = (costheta[:, None] * e_z + sintheta[:, None] *( np.cos(phi)[:, None] * e_x + np.sin(phi)[:, None] * e_y))
+        return new_dir
     @staticmethod
     def _sampleChannel(weights, rng):
         """ 
@@ -171,6 +222,10 @@ class CollisionEngine:
             Energy losses for each excitation channel.
         loss_p : (m,) ndarray
             Energy losses for the product excitation channels.
+        col : (m,) ndarray
+            Emission colors for each excitation channel.
+        col_p : (m,) ndarray
+            Emission colors for the product excitation channels.
         specie : str
             The specie with which the electrons have collided.
         diagnostics : Diagnostics, optional
@@ -180,13 +235,14 @@ class CollisionEngine:
             return 
         
         specieBool = True if specie == "N2" else False          # for diagnostics :  True for N2, False for O2
-
+        
         # elastic collision ? 
         elastic = self.rng.random(idx.size) <= nu_el[idx] / nu_species[idx]
         el_idx = idx[elastic]   #electrons that underwent elastic collisions
         if el_idx.size > 0:
             speed = np.linalg.norm(vel[el_idx], axis=1)
-            new_vel[el_idx] = self._rotate_isotropic_dir(el_idx.size, self.rng) * speed[:, None]       # new travelling direction from isotropic distribution, same speed as before
+            #new_vel[el_idx] = self._rotate_isotropic_dir(el_idx.size, self.rng) * speed[:, None]       # new travelling direction from isotropic distribution, same speed as before
+            new_vel[el_idx] = self._scatter_direction(vel[el_idx], eV[el_idx], self.rng) * speed[:, None]  # new travelling direction from forward-peaked distribution, same speed as before
             if diagnostics is not None:
                 [diagnostics.recordCollision(pos[el_idx[i]], False, specieBool) for i in range(el_idx.size)]        # record elastic collision
 

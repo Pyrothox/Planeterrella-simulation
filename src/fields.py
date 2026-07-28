@@ -4,6 +4,8 @@ from abc import ABC, abstractmethod
 from src.geometry import Planeterrella, Dipole, Sphere, Needle
 from rich.progress import Progress, TextColumn, BarColumn, TimeRemainingColumn, MofNCompleteColumn
 
+_EPS0 = 8.854187817e-12  # Permittivity of free space, F/m
+
 class Fields(ABC):
     @abstractmethod
     def at(self, position: np.ndarray) -> np.ndarray:
@@ -44,12 +46,11 @@ class ElectricField(Fields):
         self.voltage = voltage
 
         if isinstance(self.cathode, Sphere) and isinstance(self.anode, Sphere):     # 2 sheres configuration
-            eps0 = 8.854187817e-12  # Permittivity of free space
             R1 = self.cathode.radius
             R2 = self.anode.radius
             d = np.linalg.norm(self.anode.position - self.cathode.position)
             V = self.voltage
-            Q = 4 * np.pi * eps0 * V / (1/R1 - 1/R2 + 2/d)
+            Q = 4 * np.pi * _EPS0 * V / (1/R1 - 1/R2 + 2/d)
 
         else:       # 1 shere and 1 needle configuration
             if isinstance(self.cathode, Needle):
@@ -60,7 +61,7 @@ class ElectricField(Fields):
             R = needle.r
             V = self.voltage
 
-            Q = 2 * np.pi * eps0 * V * L / np.log(2 * L / R)
+            Q = 2 * np.pi * _EPS0 * V * L / np.log(2 * L / R)
 
         self.Q = Q
 
@@ -78,8 +79,7 @@ class ElectricField(Fields):
         """
         # For simplicity, we assume a uniform electric field between the cathode and anode.
         # This is a simplification and may not represent the actual field distribution.
-        eps0 = 8.854187817e-12  # Permittivity of free space
-        k= 1/(4*np.pi*eps0)
+        k= 1/(4*np.pi*_EPS0)
 
         Q = self.Q
         # charges ponctuelles
