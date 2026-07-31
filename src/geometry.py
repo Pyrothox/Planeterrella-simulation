@@ -38,7 +38,7 @@ class Planeterrella:
             distances = np.linalg.norm(positions - self.cathode.position, axis=1)
             alive[distances <= self.cathode.radius] = False
         elif isinstance(self.cathode, Needle):
-            # Implement needle collision logic if needed
+            # The needle is considered fine enough to ignore collisions
             pass
 
         # Check collision with anode
@@ -46,7 +46,7 @@ class Planeterrella:
             distances = np.linalg.norm(positions - self.anode.position, axis=1)
             alive[distances <= self.anode.radius] = False
         elif isinstance(self.anode, Needle):
-            # Implement needle collision logic if needed
+            # The needle is considered fine enough to ignore collisions
             pass
 
         # Check collision with dome

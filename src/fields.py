@@ -3,8 +3,20 @@ import numpy as np
 from abc import ABC, abstractmethod
 from src.geometry import Planeterrella, Dipole, Sphere, Needle
 from rich.progress import Progress, TextColumn, BarColumn, TimeRemainingColumn, MofNCompleteColumn
+import os 
+import json
+import hashlib
 
 _EPS0 = 8.854187817e-12  # Permittivity of free space, F/m
+_CACHE_DIR = "field_cache/"  # Path to the cache file for electric field values
+
+def _toJSON(value):
+    """ json can't handle numpy arrays, so we give it a lil help"""
+    match value:
+        case np.ndarray():
+            return [_toJSON(v) for v in value.tolist()]
+        case _:
+            return value
 
 class Fields(ABC):
     @abstractmethod
@@ -94,7 +106,7 @@ class ElectricField(Fields):
 
 class ElectricFieldv2(Fields):
     # Better electric field that considers the whle  surface of the electrodes.
-    def __init__(self, planeterrella: Planeterrella, voltage: float, resolution: float = 0.005):
+    def __init__(self, planeterrella: Planeterrella, voltage: float, resolution: float = 0.005, use_cache: bool = True):
         """ resolution is in meters, and is the distance between the points of the grid. """
         self.cathode = planeterrella.cathode
         self.anode = planeterrella.anode
@@ -102,6 +114,13 @@ class ElectricFieldv2(Fields):
         self.voltage = voltage
         self.resolution = resolution
 
+        cache_path, params_json = None, None
+
+        if use_cache:
+            cache_path, params_json = self._cache_key()     #what key to expect for our current setup
+            if os.path.exists(cache_path) and  self._load_cache(cache_path, params_json):       # check if already computed
+                print(f"recovered previous E field from cache: {cache_path}")
+                return
         with Progress(
                     TextColumn("[bold blue]{task.description}"),
                     BarColumn(),
@@ -114,6 +133,9 @@ class ElectricFieldv2(Fields):
             self._voxelize_electrodes()
             self._solve_laplace(tol=1e-5, maxiter=10000, progress=progress, task=task)
             self._build_interpolation(progress=progress, task=task)
+        if use_cache:
+            self._save_cache(cache_path, params_json)       #saving the computed E field to cache for future use
+            print(f"saved E field to cache: {cache_path}")
 
     def at(self, positions: np.ndarray) -> np.ndarray:
         """
@@ -132,6 +154,65 @@ class ElectricFieldv2(Fields):
         E = np.stack((Ex, Ey, Ez), axis=1)  # (N,3)
         return E
 
+    def _load_cache(self, save_path: str, params_json: str) -> bool:
+        """ loads the E field from cache if it exists and matches the current parameters."""
+        try:
+            data = np.load(save_path)
+            if str(data['params_json']) != params_json:
+                return False
+            self.x = data['x']
+            self.y = data['y']
+            self.z = data['z']
+            self.phi = data['phi_normalized'] * self.voltage  # scale back to actual voltage
+            self.nx, self.ny, self.nz = data['nx'], data['ny'], data['nz']
+            self.resX, self.resY, self.resZ = data['resX'], data['resY'], data['resZ']
+            self._build_interpolation()
+            return True
+        except Exception as e:
+            print(f"Failed to load E field cache: {e}. Recomputing from scratch.")
+            return False
+        
+    def _save_cache(self, save_path, params_json: str):
+        """ saves the E field to cache for future use."""
+
+        phi_normalized = self.phi / self.voltage  # normalize to unit potential for linearity
+        np.savez(save_path, 
+                 x=self.x, y=self.y, z=self.z, phi_normalized=phi_normalized,
+                 nx=self.nx, ny=self.ny, nz=self.nz,
+                 resX=self.resX, resY=self.resY, resZ=self.resZ,
+                 params_json=params_json)
+
+    def _cache_key(self):
+        """ generates a unique key for the current setup based on relevant parameters."""
+        def electrode_signature(electrode):
+            if isinstance(electrode, Sphere):
+                return {
+                    "type": "Sphere",
+                    "radius": electrode.radius,
+                    "position": electrode.position.tolist(),
+                }
+            elif isinstance(electrode, Needle):
+                return {
+                    "type": "Needle",
+                    "position": electrode.position.tolist(),
+                    "direction_vector": electrode.direction_vector.tolist(),
+                    "length_cone": electrode.lb,
+                    "length_cylinder": electrode.lc,
+                    "radius": electrode.r
+                }
+            else:
+                raise ValueError("Unknown electrode type")
+        params = {
+            "resolution": self.resolution,
+            "dome": {"radius": self.dome.radius, "height": self.dome.height},
+            "cathode": electrode_signature(self.cathode),
+            "anode": electrode_signature(self.anode)
+        }
+        params_json = json.dumps(params, sort_keys=True)    #saving the relevant parameters to a json string 
+        key = hashlib.sha256(params_json.encode("utf-8")).hexdigest()[:16]   # unique hash of the parameters to use as a cache key
+        os.makedirs(_CACHE_DIR, exist_ok=True)
+        return os.path.join(_CACHE_DIR, f"Efield_{key}.npz"), params_json
+        
     def _build_grid(self):
         """ creates the grid with the given resolution and the size of the dome. """
         R, H = self.dome.radius, self.dome.height
@@ -186,7 +267,7 @@ class ElectricFieldv2(Fields):
         (voxelize_sphere if isinstance(self.cathode, Sphere) else voxelize_needle)(self.cathode, 0.0)       
 
         self.fixed_mask = fixed_mask
-        self.fixed_value = fixed_value
+        self.fixed_value = fixed_value/ self.voltage  # normalize to unit potential for linearity
         self.excluded_mask = excluded_mask
 
     def _idx(self, i, j, k):
@@ -269,17 +350,17 @@ class ElectricFieldv2(Fields):
         self.phi = phi.reshape(nx, ny, nz)
         progress.update(task, advance=1) 
 
-    def _build_interpolation(self, progress, task):
+    def _build_interpolation(self, progress = None, task = None):
         """ builds an interpolation function for the potential. """
         from scipy.interpolate import RegularGridInterpolator
         dphidx, dphidy, dphidz = np.gradient(self.phi, self.resX, self.resY, self.resZ)
         Ex, Ey, Ez = -dphidx, -dphidy, -dphidz
-        progress.update(task, description="[green]Building interpolation functions")
+        if progress is not None : progress.update(task, description="[green]Building interpolation functions")
 
         self._interp_Ex = RegularGridInterpolator((self.x, self.y, self.z), Ex, bounds_error=False, fill_value=0.0)
-        progress.update(task, advance=1)
+        if progress is not None : progress.update(task, advance=1)
         self._interp_Ey = RegularGridInterpolator((self.x, self.y, self.z), Ey, bounds_error=False, fill_value=0.0)
-        progress.update(task, advance=1)
+        if progress is not None : progress.update(task, advance=1)
         self._interp_Ez = RegularGridInterpolator((self.x, self.y, self.z), Ez, bounds_error=False, fill_value=0.0)
-        progress.update(task, advance=1)
+        if progress is not None : progress.update(task, advance=1)
     

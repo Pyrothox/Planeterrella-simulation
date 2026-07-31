@@ -26,6 +26,7 @@ class Simulation:
         N = self.Nparticles
         diag_step = self.experiment.simSettings["trajectoryStep"]
         emission_eV = self.experiment.simSettings["emission_eV"]  #initial electron energy
+        dt_precision_ratio = self.experiment.simSettings["dt_precision_ratio"]  #precision for adaptive time step,  dt = precision_ratio * cyclotron_T 
         cathode = self.experiment.planeterrella.cathode
         dt = 1e-12/N;    # initial time step before adaptive step size computation
 
@@ -48,7 +49,7 @@ class Simulation:
             
             for step in range(self.Nsteps):     # running the simulation for Nsteps
 
-                BorisPusher(electrons, self.experiment.MagneticField, self.experiment.ElectricField)       #updating the positions and velocities of electrons using the Boris algorithm
+                BorisPusher(electrons, self.experiment.MagneticField, self.experiment.ElectricField, dt_precision_ratio)       #updating the positions and velocities of electrons using the Boris algorithm
                 electrons.alive[electrons.alive] &= self.experiment.planeterrella.Out_of_Bounds(electrons.position[electrons.alive])       #electrons absorption check
 
                 nb_alive = electrons.alive.sum()
