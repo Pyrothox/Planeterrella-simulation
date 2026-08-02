@@ -30,7 +30,7 @@ class Simulation:
         cathode = self.experiment.planeterrella.cathode
         dt = 1e-12/N;    # initial time step before adaptive step size computation
 
-        electrons = Electrons(N, cathode, dt, emission_eV)
+        electrons = Electrons(N, cathode, dt, emission_eV, self.experiment.ElectricField)  # Initialize electrons with initial positions and velocities
         diags = Diagnostics(electrons, collisionsEnabled=self.experiment.collisions)  # Initialize diagnostics with collision recording if enabled
         if self.experiment.collisions:
             collisionEngine = CollisionEngine(self.experiment.gas)

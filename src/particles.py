@@ -12,17 +12,17 @@ class Particles:
 
 class Electrons(Particles):
     # represents the electrons in the simulation.
-    def __init__(self, N, cathode: Needle | Sphere, dt:float, initial_energy:float):
+    def __init__(self, N, cathode: Needle | Sphere, dt:float, initial_energy:float, Efield):
         self.cathode = cathode
         
         #generating random initial positions and velocities for the electrons based on the cathode type
         if isinstance(cathode, Needle):
-            initial_settings = [MonteCarloNeedle(cathode, initial_energy) for _ in range(N)]
+            initial_settings = MonteCarloNeedle(cathode, initial_energy, N, Efield)
         elif isinstance(cathode, Sphere):
-            initial_settings = [MonteCarloSphere(cathode, initial_energy) for _ in range(N)]
+            initial_settings = MonteCarloSphere(cathode, initial_energy, N, Efield) 
         else:
             raise ValueError("Unsupported cathode type")
-        initial_positions, initial_velocities = zip(*initial_settings)
+        initial_positions, initial_velocities = initial_settings
         initial_positions = np.array(initial_positions)
         initial_velocities = np.array(initial_velocities)
 

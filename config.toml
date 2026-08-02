@@ -10,7 +10,7 @@ collisions = true  # enable collisions between electrons and gas molecules.
 
 [Debug]
 Plot_B_field = false # if true, will plot the B field lines instead, no simulation. 
-Plot_E_field = true # if true, will plot the E field lines instead, no simulation.
+Plot_E_field = false # if true, will plot the E field lines instead, no simulation.
 
 
 
